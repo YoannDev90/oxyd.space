@@ -1,0 +1,5 @@
+creation_rules:
+  # Only the encrypted file may contain real tokens. Replace with the public
+  # key printed by `age-keygen -o key.txt` (see MAINTAINER.md).
+  - path_regex: 'config/secrets\.enc\.json$'
+    age: age17fty67096hpwd0cqa3g56z2g3jxq5yq79n00wm3xpuyv6nnytfpqu4x57k

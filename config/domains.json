@@ -1,0 +1,10 @@
+{
+  "$comment": "Registry of base domains managed by this instance. To onboard a new domain: its owner creates a deSEC account + zone, gives you an API token, you add it to config/secrets.enc.json under a new token_key (sops config/secrets.enc.json), then list the zone here. Keep the dropdown in .github/ISSUE_TEMPLATE/register.yml in sync.",
+  "zones": [
+    {
+      "domain": "oxyd.space",
+      "token_key": "desec_token_oxyd_space",
+      "public": true
+    }
+  ]
+}
