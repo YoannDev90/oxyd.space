@@ -129,6 +129,31 @@ h1 .brand{
 .checker-result .bad{color:var(--bad)}
 .checker-result .info{color:var(--muted)}
 .checker-result a{margin-left:10px;font-weight:700}
+.propagation{max-width:560px;margin:18px auto 0;text-align:left}
+.propagation summary{font-family:var(--mono);font-size:12px;color:var(--muted);cursor:pointer;user-select:none;list-style:none}
+.propagation summary::-webkit-details-marker{display:none}
+.propagation summary::before{content:"\25b8 ";color:var(--accent)}
+.propagation[open] summary::before{content:"\25be "}
+.prop-body{margin-top:12px}
+.prop-row{display:flex;gap:10px}
+.prop-row select{
+  background:var(--panel-2);border:1px solid var(--line);border-radius:10px;
+  color:var(--text);font-family:var(--mono);font-size:13px;padding:10px 12px;cursor:pointer;
+}
+.prop-results{margin-top:14px;display:flex;flex-direction:column;gap:8px}
+.prop-server{
+  display:flex;align-items:center;gap:10px;
+  background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;
+  font-family:var(--mono);font-size:12.5px;
+}
+.prop-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.prop-dot.ok{background:var(--ok)}
+.prop-dot.err{background:var(--bad)}
+.prop-dot.wait{background:var(--muted);opacity:.4}
+.prop-name{min-width:70px;color:var(--fg);font-weight:600}
+.prop-ip{color:var(--muted);flex:1;word-break:break-all}
+.prop-time{color:var(--muted);white-space:nowrap}
+.prop-summary{font-family:var(--mono);font-size:13px;color:var(--muted);margin-top:10px}
 
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:640px;margin:52px auto 0}
 .stat{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px 12px}
@@ -286,6 +311,23 @@ footer a:hover{color:var(--text)}
     <div class="checker-result info" id="checkerResult" data-i18n="checker.idle">Type a name to see if it's free.</div>
   </div>
 
+  <details class="propagation">
+    <summary data-i18n="prop.title">DNS propagation checker</summary>
+    <div class="prop-body">
+      <div class="prop-row">
+        <div class="domain-input-wrap" style="flex:1">
+          <input id="propInput" type="text" autocomplete="off" spellcheck="false" maxlength="253" placeholder="example.com" data-i18n-placeholder="prop.placeholder">
+        </div>
+        <select id="propType">
+          <option value="A">A</option><option value="AAAA">AAAA</option><option value="CNAME">CNAME</option>
+          <option value="MX">MX</option><option value="NS">NS</option><option value="TXT">TXT</option>
+        </select>
+        <button class="btn-primary" id="propBtn" data-i18n="prop.cta">Check</button>
+      </div>
+      <div class="prop-results" id="propResults"></div>
+    </div>
+  </details>
+
   <div class="stats">
     <div class="stat"><b id="statClaimed">—</b><span data-i18n="stats.claimed">subdomains claimed</span></div>
     <div class="stat"><b>$0</b><span data-i18n="stats.price">price / year</span></div>
@@ -389,6 +431,7 @@ const I18N = {
     'checker.invalid':'Invalid name. Use a-z, 0-9 and hyphens (up to 3 levels, e.g. sub.site).',
     'checker.reserved':'{d} cannot end a hostname (reserved). Put it first instead, e.g. {d}yourname','checker.checking':'Checking…','checker.error':'Could not check right now. Try again later.',
     'checker.register':'Register {d}',
+    'prop.title':'DNS propagation checker','prop.placeholder':'example.com','prop.cta':'Check','prop.checking':'Querying 32 servers\u2026','prop.done':'{ok}/{total} servers resolved','prop.fail':'Query failed','prop.none':'No records found','prop.servers':'servers',
     'stats.claimed':'subdomains claimed','stats.price':'price / year','stats.time':'to go live',
     'steps.title':'How it works','steps.sub':'Fully automated. No accounts, no waiting lists.',
     'step1.t':'Fill in the issue form','step1.d':'Open a pre-filled issue on GitHub: pick a name, a record type and its target. Takes one minute.',
@@ -423,6 +466,7 @@ const I18N = {
     'checker.invalid':'Nom invalide. Utilisez a-z, 0-9 et des tirets (jusqu\u2019à 3 niveaux, ex. sous.site).',
     'checker.reserved':'{d} ne peut pas terminer un nom (réservé). Mettez-le en premier, ex. {d}votrenom','checker.checking':'Vérification…','checker.error':'Impossible de vérifier pour le moment. Réessayez plus tard.',
     'checker.register':'Réserver {d}',
+    'prop.title':'Vérificateur de propagation DNS','prop.placeholder':'exemple.fr','prop.cta':'Vérifier','prop.checking':'Interrogation de 32 serveurs\u2026','prop.done':'{ok}/{total} serveurs résolus','prop.fail':'Requête échouée','prop.none':'Aucun enregistrement trouvé','prop.servers':'serveurs',
     'stats.claimed':'sous-domaines réservés','stats.price':'prix / an','stats.time':'pour être en ligne',
     'steps.title':'Comment ça marche','steps.sub':'Entièrement automatisé. Sans compte, sans liste d\u2019attente.',
     'step1.t':'Remplissez le formulaire','step1.d':'Ouvrez une issue pré-remplie sur GitHub : nom, type d’enregistrement et cible. Une minute suffit.',
@@ -476,7 +520,35 @@ function applyLang(){
 document.getElementById('langBtn').addEventListener('click',()=>{
   lang = lang==='en'?'fr':'en';
   localStorage.setItem('oxyd-lang',lang);
-  applyLang();
+  const PROP_SERVERS=["8.8.8.8","1.1.1.1","9.9.9.9","208.67.222.222","77.88.8.8","64.6.64.6","156.154.70.1","198.41.0.4","185.228.168.9","76.76.19.19","109.228.4.246","195.46.39.39","212.230.255.1","5.11.11.5","94.140.14.14","85.194.70.174","164.124.101.2","209.51.161.14","114.114.115.115","1.10.10.10","203.119.13.77","60.32.149.50","195.186.1.111","195.243.214.4","139.130.4.4","31.7.37.37","87.213.100.113","203.78.194.179","203.188.242.211","91.121.62.94","148.235.82.66","216.21.129.22"];
+async function queryProp(){
+  const domain=document.getElementById('propInput').value.trim().toLowerCase().replace(/^https?:\/\//,'').split('/')[0];
+  const rtype=document.getElementById('propType').value;
+  const res=document.getElementById('propResults');
+  const btn=document.getElementById('propBtn');
+  if(!domain){res.innerHTML='';return;}
+  btn.disabled=true;
+  res.innerHTML='<span class="prop-summary">'+t('prop.checking')+'</span>';
+  const seen=new Set();
+  const servers=PROP_SERVERS.filter(ip=>{if(seen.has(ip))return false;seen.add(ip);return true;}).slice(0,32);
+  const results=await Promise.allSettled(servers.map(ip=>fetch('https://dnsrobot.net/api/dns-query',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({domain:domain,recordType:rtype,dnsServer:ip,timeout:5000})}).then(r=>r.json()).then(d=>Object.assign(d,{dnsServer:ip})).catch(()=>({status:'error',dnsServer:ip}))));
+  let resolved=0;
+  const cards=results.map(r=>{
+    const d=r.status==='fulfilled'?r.value:{status:'error',dnsServer:'?'};
+    const success=d.status==='success';
+    if(success)resolved++;
+    const ips=Array.isArray(d.resolvedIPs)?d.resolvedIPs.join(', '):(d.resolvedData||'');
+    return '<div class="prop-server"><span class="prop-dot '+(success?'ok':'err')+'"></span><span class="prop-name">'+d.dnsServer+'</span><span class="prop-ip">'+(success?ips:'&mdash;')+'</span><span class="prop-time">'+(success?d.responseTime+'ms':'timeout')+'</span></div>';
+  }).join('');
+  const summaryKey=resolved>0?'prop.done':'prop.fail';
+  res.innerHTML=cards+'<span class="prop-summary">'+fmt(t(summaryKey),{ok:String(resolved),total:String(servers.length)})+'</span>';
+  btn.disabled=false;
+}
+document.getElementById('propBtn').addEventListener('click',queryProp);
+document.getElementById('propInput').addEventListener('keydown',e=>{if(e.key==='Enter')queryProp();});
+
+
+applyLang();
 });
 
 function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;');}
