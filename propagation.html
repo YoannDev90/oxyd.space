@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DNS Propagation Checker — oxyd.space</title>
+<meta name="description" content="Check DNS propagation across 32 global servers. Free, no auth, instant results.">
+<link rel="canonical" href="https://oxyd.space/propagation.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2322d3ee'/%3E%3Cstop offset='1' stop-color='%23818cf8'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='16' cy='16' r='13' fill='none' stroke='url(%23g)' stroke-width='4'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#05080c;--panel:#0b1118;--panel-2:#0e1520;--line:#182231;
+  --text:#dbe7f3;--muted:#8296ad;--accent:#22d3ee;--accent-2:#818cf8;
+  --ok:#34d399;--bad:#f87171;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:
+    radial-gradient(1000px 500px at 80% -10%,rgba(129,140,248,.12),transparent 60%),
+    radial-gradient(800px 420px at 10% -5%,rgba(34,211,238,.10),transparent 55%),
+    var(--bg);
+  color:var(--text);font-family:"Inter",system-ui,-apple-system,sans-serif;line-height:1.6;min-height:100vh;
+}
+a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+.container{max-width:860px;margin:0 auto;padding:0 24px}
+nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);background:rgba(5,8,12,.72);border-bottom:1px solid var(--line)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;height:60px}
+.logo{font-family:var(--mono);font-weight:700;font-size:16px;color:var(--text);display:flex;align-items:center;gap:8px}
+.logo:hover{text-decoration:none}
+.nav-links{display:flex;gap:20px;font-size:14px}
+.nav-links a{color:var(--muted)}.nav-links a:hover{color:var(--text)}
+
+.tool{margin:48px auto;max-width:720px}
+h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
+.sub{color:var(--muted);font-size:14.5px;margin-bottom:32px}
+
+.form{display:flex;gap:10px;flex-wrap:wrap}
+.input-wrap{
+  flex:1;min-width:200px;display:flex;align-items:center;gap:0;
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;
+  transition:border-color .15s;
+}
+.input-wrap:focus-within{border-color:var(--accent)}
+.input-wrap input{
+  flex:1;min-width:60px;background:transparent;border:none;outline:none;
+  color:var(--text);font-family:var(--mono);font-size:15px;padding:12px 14px;
+}
+.input-wrap input::placeholder{color:#4d5f76}
+select{
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  color:var(--text);font-family:var(--mono);font-size:14px;padding:12px 14px;cursor:pointer;
+}
+select:focus{outline:none;border-color:var(--accent)}
+.btn{
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  color:#04121a;font-weight:700;font-size:14.5px;
+  border:none;border-radius:10px;padding:0 24px;cursor:pointer;
+  transition:filter .15s;white-space:nowrap;
+}
+.btn:hover{filter:brightness(1.12)}
+.btn:disabled{filter:grayscale(.5) brightness(.75);cursor:wait}
+
+.results{margin-top:28px;display:flex;flex-direction:column;gap:8px}
+.row{
+  display:flex;align-items:center;gap:12px;
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 16px;
+  font-family:var(--mono);font-size:13px;
+}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.ok{background:var(--ok)}.dot.err{background:var(--bad)}.dot.wait{background:var(--muted);opacity:.3}
+.srv{min-width:72px;font-weight:600;color:var(--fg)}
+.ips{color:var(--muted);flex:1;word-break:break-all}
+.ms{color:var(--muted);white-space:nowrap}
+.summary{font-family:var(--mono);font-size:13px;color:var(--muted);margin-top:14px}
+.legend{display:flex;gap:20px;margin-top:20px;font-size:12.5px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend .dot{width:7px;height:7px}
+
+footer{margin-top:80px;padding:24px 0;text-align:center;font-size:13px;color:var(--muted);border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="container nav-inner">
+    <a class="logo" href="/"><img src="assets/logo.svg" alt="" width="24" height="24" style="display:block">oxyd<span style="color:var(--muted)">·space</span></a>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="https://github.com/YoannDev90/oxyd.space">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="tool">
+    <h1>DNS Propagation Checker</h1>
+    <p class="sub">Query 32 global DNS servers simultaneously. Free, no auth, instant results.</p>
+
+    <div class="form">
+      <div class="input-wrap">
+        <input id="domain" type="text" autocomplete="off" spellcheck="false" maxlength="253" placeholder="example.com" autofocus>
+      </div>
+      <select id="rtype">
+        <option value="A">A</option><option value="AAAA">AAAA</option><option value="CNAME">CNAME</option>
+        <option value="MX">MX</option><option value="NS">NS</option><option value="TXT">TXT</option>
+      </select>
+      <button class="btn" id="go">Check</button>
+    </div>
+
+    <div class="results" id="out"></div>
+
+    <div class="legend">
+      <span><span class="dot ok"></span> Resolved</span>
+      <span><span class="dot err"></span> Failed / timeout</span>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="container">
+    Powered by <a href="https://dnsrobot.net">dnsrobot.net</a> API (32 servers) ·
+    <a href="/">oxyd.space</a>
+  </div>
+</footer>
+
+<script>
+const S=["8.8.8.8","1.1.1.1","9.9.9.9","208.67.222.222","77.88.8.8","64.6.64.6","156.154.70.1","198.41.0.4","185.228.168.9","76.76.19.19","109.228.4.246","195.46.39.39","212.230.255.1","5.11.11.5","94.140.14.14","85.194.70.174","164.124.101.2","209.51.161.14","114.114.115.115","1.10.10.10","203.119.13.77","60.32.149.50","195.186.1.111","195.243.214.4","139.130.4.4","31.7.37.37","87.213.100.113","203.78.194.179","203.188.242.211","91.121.62.94","148.235.82.66","216.21.129.22"];
+
+const domain=document.getElementById('domain');
+const rtype=document.getElementById('rtype');
+const go=document.getElementById('go');
+const out=document.getElementById('out');
+
+async function check(){
+  const d=domain.value.trim().toLowerCase().replace(/^https?:\/\//,'').split('/')[0];
+  if(!d){out.innerHTML='';return;}
+  go.disabled=true;
+  out.innerHTML='<span class="summary">Querying 32 servers…</span>';
+  const t0=performance.now();
+  const results=await Promise.allSettled(S.map(ip=>
+    fetch('https://dnsrobot.net/api/dns-query',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({domain:d,recordType:rtype.value,dnsServer:ip,timeout:5000})
+    }).then(r=>r.json()).then(j=>({...j,ip})).catch(()=>({status:'error',ip}))
+  ));
+  const elapsed=Math.round(performance.now()-t0);
+  let ok=0;
+  const html=results.map(r=>{
+    const j=r.status==='fulfilled'?r.value:{status:'error',ip:'?'};
+    const s=j.status==='success';
+    if(s)ok++;
+    const ips=Array.isArray(j.resolvedIPs)?j.resolvedIPs.join(', '):(j.resolvedData||'');
+    return '<div class="row"><span class="dot '+(s?'ok':'err')+'"></span><span class="srv">'+j.ip+'</span><span class="ips">'+(s?ips:'&mdash;')+'</span><span class="ms">'+(s?j.responseTime+'ms':'timeout')+'</span></div>';
+  }).join('');
+  out.innerHTML=html+'<span class="summary">'+ok+'/'+S.length+' servers resolved · '+elapsed+'ms total</span>';
+  go.disabled=false;
+}
+
+go.addEventListener('click',check);
+domain.addEventListener('keydown',e=>{if(e.key==='Enter')check();});
+</script>
+</body>
+</html>
