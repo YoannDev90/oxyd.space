@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or problem with an existing subdomain
+    url: https://github.com/YoannDev90/oxyd.space/discussions
+    about: Open a discussion instead of a blank issue.

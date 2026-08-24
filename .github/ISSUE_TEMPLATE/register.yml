@@ -1,0 +1,90 @@
+name: Subdomain registration
+description: Register, update or delete your free oxyd.space subdomain
+title: "Subdomain registration"
+labels: ["registration"]
+body:
+  - type: dropdown
+    id: request-type
+    attributes:
+      label: Request type
+      options:
+        - Register a new subdomain
+        - Update my records
+        - Delete my subdomain
+    validations:
+      required: true
+
+  - type: dropdown
+    id: base-domain
+    attributes:
+      label: Base domain
+      description: The domain your subdomain lives under. Maintained in config/domains.json.
+      options:
+        - oxyd.space
+    validations:
+      required: true
+
+  - type: input
+    id: subdomain
+    attributes:
+      label: Subdomain
+      description: Without the base domain. Up to 4 levels — e.g. myname, service.myname or s1.service.myname
+      placeholder: s1.nextcloud.yourname
+    validations:
+      required: true
+
+  - type: dropdown
+    id: record-type
+    attributes:
+      label: Record type
+      description: CNAME for websites (GitHub Pages, Vercel…), A/AAAA for servers, TXT for verifications
+      options:
+        - CNAME
+        - A
+        - AAAA
+        - TXT
+    validations:
+      required: true
+
+  - type: input
+    id: record-value
+    attributes:
+      label: Record value
+      description: The target hostname, IP address or text value
+      placeholder: yourname.github.io
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-records
+    attributes:
+      label: Additional records (optional)
+      description: One per line, format "TYPE VALUE [ttl=3600]"
+      placeholder: |
+        A 203.0.113.10
+        TXT my-verification-token
+  - type: checkboxes
+    id: www-prefix
+    attributes:
+      label: Enable www. prefix
+      options:
+        - label: Yes, also publish www.<subdomain> with the same records
+
+  - type: input
+    id: github-id
+    attributes:
+      label: Your GitHub user ID
+      description: Numeric ID — get it at https://api.github.com/users/YOUR-USERNAME (the "id" field). It is verified against the GitHub API.
+      placeholder: "12345678"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Terms
+      options:
+        - label: I will not use this subdomain for phishing, malware, spam or illegal content
+          required: true
+        - label: I understand the service is provided as-is and may be discontinued
+          required: true

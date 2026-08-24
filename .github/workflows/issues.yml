@@ -1,0 +1,31 @@
+name: Process registration
+
+on:
+  issues:
+    types: [opened]
+
+concurrency:
+  group: register-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+permissions:
+  issues: write
+  contents: write
+
+jobs:
+  register:
+    if: ${{ !github.event.issue.pull_request && startsWith(github.event.issue.title, 'Subdomain registration') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install sops
+        run: |
+          curl -fsSL -o /usr/local/bin/sops https://github.com/getsops/sops/releases/download/v3.9.4/sops-v3.9.4.linux.amd64
+          chmod +x /usr/local/bin/sops
+      - run: python scripts/process_issue.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
