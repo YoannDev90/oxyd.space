@@ -1,46 +1,42 @@
 # Maintainer guide
 
-The stack is 100% free: **GitHub Pages** (landing), **GitHub Actions** (bot), **deSEC** (DNS). This guide is for the repository owner only — contributors only ever touch the issue template.
+Stack: **GitHub Pages** (landing), **GitHub Actions** (bot), **deSEC** (DNS) — 100% free tiers. This guide is for the repository owner only; contributors only ever touch the issue template.
 
-## 1. Push this repository
+## 1. Secrets: sops + age (one GitHub secret only)
 
-```bash
-git init -b main && git add -A && git commit -m "feat: initial setup"
-git remote add origin git@github.com:YoannDev90/oxyd.space.git
-git push -u origin main
-```
+All DNS tokens live in `config/secrets.enc.json`, encrypted with [sops](https://github.com/getsops/sops) using an **age** key. GitHub stores exactly one secret: `SOPS_AGE_KEY`.
 
-Adjust `GITHUB_REPO` in `index.html` if you rename/move the repository.
-
-## 2. Secrets: sops + age (one GitHub secret only)
-
-All DNS tokens live in `config/secrets.enc.json`, encrypted with [sops](https://github.com/getsops/sops) using an **age** key. The repo stores ciphertext; GitHub stores a single secret, `SOPS_AGE_KEY`.
-
-1. Install the tools locally: `brew install sops age` (or grab binaries from their GitHub releases).
-2. Generate a keypair and keep it safe:
+1. Install the tools: `mise use sops age` (pinned by `mise.toml`) or grab binaries from their releases.
+2. Generate a keypair if needed and keep `key.txt` safe (password manager):
 
    ```bash
    age-keygen -o key.txt        # prints the public key, stores the private one
    ```
 
-3. Put the public key into [.sops.yaml](.sops.yaml) (replace the placeholder).
-4. Create the encrypted secrets file:
+3. Put the public key into [.sops.yaml](.sops.yaml).
+4. Create and fill the vault:
 
    ```bash
    cp config/secrets.example.json config/secrets.enc.json
-   sops -e -i config/secrets.enc.json
-   sops config/secrets.enc.json   # edit: replace each REPLACE_WITH_DESEC_TOKEN
+   sops -e -i config/secrets.enc.json         # encrypt in place (uses .sops.yaml)
+   EDITOR=nano sops config/secrets.enc.json   # edit tokens; saving re-encrypts
    ```
 
-5. Commit `config/secrets.enc.json` (it is safe — it's ciphertext). Never commit `key.txt`.
-6. On GitHub: *Settings → Secrets and variables → Actions → New secret* → name **`SOPS_AGE_KEY`**, value = the full contents of `key.txt` (`AGE-SECRET-KEY-…`). That is the only secret needed.
-7. Keep `key.txt` in your password manager. Losing it means re-encrypting with a new key and rotating tokens.
+5. Install the private key once for local CLI use (scripts + editing) — no env vars needed afterwards:
 
-## 3. Your first zone (oxyd.space)
+   ```bash
+   mkdir -p ~/.config/sops/age && cp key.txt ~/.config/sops/age/keys.txt
+   ```
 
-1. Sign up at [desec.io](https://desec.io) (free) and add the domain `oxyd.space`.
-2. In Namecheap → Domain List → Manage → **Nameservers** → Custom DNS → enter deSEC's nameservers (`ns1.desec.io`, `ns2.desec.org`).
-3. Put the zone's API token in `config/secrets.enc.json` under the matching `token_key` (`desec_token_oxyd_space` by default — see [`config/domains.json`](config/domains.json)).
+6. Commit `config/secrets.enc.json` — it is ciphertext, that's the point. Never commit `key.txt`.
+7. On GitHub: *Settings → Secrets and variables → Actions* → new secret **`SOPS_AGE_KEY`** = full contents of `key.txt`. That is the only secret needed.
+8. Losing `key.txt` means re-encrypting with a new keypair and rotating every token.
+
+## 2. Your first zone (oxyd.space)
+
+1. Sign up at [desec.io](https://desec.io) (free), add the domain `oxyd.space`.
+2. Namecheap → Domain List → Manage → **Nameservers** → Custom DNS → deSEC's (`ns1.desec.io`, `ns2.desec.org`).
+3. Put the zone API token in the vault under its `token_key` (see [`config/domains.json`](config/domains.json)).
 4. Recreate the landing page records (deSEC UI or API):
 
 ```bash
@@ -53,14 +49,14 @@ curl -X POST https://desec.io/api/v1/domains/$ZONE/rrsets/ \
   -d '{"subname":"www","type":"CNAME","ttl":3600,"records":["YoannDev90.github.io."],"comment":"apex"}'
 ```
 
-> Why not Cloudflare? Free zones created after Sept 2024 are capped at **200 DNS records** — fatal for a public registry. deSEC has no record limit.
+> Why not Cloudflare? Free zones created after Sept 2024 are capped at **200 DNS records** — fatal for a public registry. deSEC has none.
 
-## 4. Onboard another domain
+## 3. Onboard another domain
 
 Anyone can offer their own domain through your bot:
 
-1. They create a free deSEC account, add their domain, point their registrar NS at deSEC, and hand you an API token scoped to that domain.
-2. Add the token to the vault: `sops config/secrets.enc.json` → new key, e.g. `"desec_token_sondomaine_fr": "…"`.
+1. They create a free deSEC account, add their domain, point their registrar NS at deSEC, hand you an API token scoped to that domain.
+2. Add the token: `sops config/secrets.enc.json` → new key, e.g. `"desec_token_sondomaine_fr": "…"`.
 3. Register the zone in [`config/domains.json`](config/domains.json):
 
    ```json
@@ -68,16 +64,15 @@ Anyone can offer their own domain through your bot:
    ```
 
 4. Subdomain files then live under `domains/sondomaine.fr/<name>.json`; quotas, reserved names and identity checks apply globally.
-5. Add the domain to the **Base domain** dropdown in `.github/ISSUE_TEMPLATE/register.yml` (keep it in sync with the config file).
+5. Add the domain to the **Base domain** dropdown in `.github/ISSUE_TEMPLATE/register.yml` (keep it in sync).
 
-## 5. Publish the landing page
+## 4. Publish the landing page
 
-*Settings → Pages → Source: Deploy from a branch → `main` / `(root)`*, set custom domain `oxyd.space` (the `CNAME` file handles it), enable *Enforce HTTPS* once the certificate is issued.
+*Settings → Pages → Source: Deploy from a branch → `main` / `(root)`*, custom domain `oxyd.space` (the `CNAME` file handles it), enable *Enforce HTTPS* once the certificate is issued.
 
-## 6. Moderation
+## 5. Moderation
 
-- The bot only auto-processes issues titled `Subdomain registration` (the template).
-- Everything else lands as a normal issue for you to read.
+- The bot only auto-processes issues titled `Subdomain registration`; everything else lands as a normal issue.
 - Levers against abuse: edit [`config/reserved_names.txt`](config/reserved_names.txt), close+lock issues, temporarily disable issues, or delete a `domains/<zone>/*.json` file (next sync removes the records).
 - A partner domain misbehaving? Remove its entry from `config/domains.json` and delete its directory — nothing else gets touched.
 - Commits by the bot do not trigger the push-based DNS sync (GitHub recursion guard); the bot runs the sync itself right after committing.
@@ -85,17 +80,15 @@ Anyone can offer their own domain through your bot:
 ## Testing locally
 
 ```bash
-python3 scripts/validate.py                                   # validate every zones/*/…json
-OXYD_DRY_RUN=true python3 scripts/update_dns.py               # plan without any secret
-OXYD_ZONE=oxyd.space python3 scripts/update_dns.py            # sync a single zone (needs SOPS_AGE_KEY)
-SOPS_AGE_KEY=$(cat key.txt) OXYD_DRY_RUN=true python3 scripts/update_dns.py   # full plan incl. remote state
+python3 scripts/validate.py                        # validate every domains/<zone>/*.json
+OXYD_DRY_RUN=true python3 scripts/update_dns.py    # plan without any secret
+OXYD_ZONE=oxyd.space python3 scripts/update_dns.py # real sync, one zone (needs local age key)
 ```
 
-Without secrets, dry run prints the desired state only. All Python scripts are stdlib-only — no `pip install`.
+All Python scripts are stdlib-only — no `pip install`.
 
 ## Security notes
 
-- Tokens never appear in plaintext on GitHub: `config/secrets.enc.json` is sops-encrypted, and CI decrypts in memory via `SOPS_AGE_KEY`.
+- Tokens never appear in plaintext on GitHub; CI decrypts in memory via `SOPS_AGE_KEY`.
 - Only rrsets tagged `oxyd-auto` are managed by the sync — apex/www records of every zone are safe.
-- Identity is anchored on the numeric GitHub ID (stable even after renames) and cross-checked at request time.
-- Ownership transfers require manual action; the bot rejects them.
+- Identity is anchored on the numeric GitHub ID (stable across renames); ownership transfers require manual action — the bot rejects them.
