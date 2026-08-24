@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22d3ee"/>
+      <stop offset="1" stop-color="#818cf8"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#22d3ee" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#818cf8" stop-opacity="0.30"/>
+      <stop offset="1" stop-color="#818cf8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="#05080c"/>
+  <circle cx="180" cy="90" r="480" fill="url(#glow1)"/>
+  <circle cx="1080" cy="570" r="520" fill="url(#glow2)"/>
+
+  <!-- faint oversized ring, background depth -->
+  <circle cx="1050" cy="120" r="230" fill="none" stroke="url(#g)" stroke-width="2" opacity="0.18"/>
+
+  <!-- logo mark: O2 molecule -->
+  <g transform="translate(96 171) scale(4.5)" fill="none" stroke="url(#g)" stroke-width="6">
+    <circle cx="25" cy="32" r="14"/>
+    <circle cx="39" cy="32" r="14"/>
+    <path d="M 36.57 45.79 A 14 14 0 0 1 28.28 41.00"/>
+  </g>
+
+  <!-- wordmark -->
+  <text x="440" y="330" font-family="Fira Sans" font-weight="700" font-size="118"
+        letter-spacing="-2" fill="#f2f7fb">oxyd.space</text>
+  <rect x="446" y="366" width="430" height="6" rx="3" fill="url(#g)"/>
+  <text x="446" y="438" font-family="Fira Sans" font-weight="400" font-size="35"
+        letter-spacing="0.5" fill="#8b98a5">free subdomains · one issue form</text>
+
+  <!-- footer strip -->
+  <text x="446" y="500" font-family="Fira Sans" font-weight="500" font-size="26"
+        fill="#4d5a66">open source · MIT · github.com/YoannDev90/oxyd.space</text>
+</svg>

@@ -1,0 +1,40 @@
+# oxyd.space
+
+> Free subdomains for everyone, powered by open source. Claim `yourname.oxyd.space` (and similar for partner domains) through a GitHub issue form — no pull request, no payment, live in minutes.
+
+oxyd.space is a community subdomain registry, similar to is-a.dev. Anyone with a GitHub account can register a subdomain by opening a pre-filled issue; an automation bot verifies the requester's identity (numeric GitHub user ID checked against the GitHub API), applies naming rules, commits the configuration to this repository and publishes the DNS records on deSEC.io (free, open-source DNS host with DNSSEC). The whole stack runs on free tiers: GitHub Pages, GitHub Actions, deSEC.
+
+## How to register a subdomain
+
+- [Subdomain registration form](https://github.com/YoannDev90/oxyd.space/issues/new?template=register.yml&request-type=Register+a+new+subdomain): pre-filled issue template — pick a base domain, subdomain name, record type/value, optional www prefix.
+- Steps: open the issue → the bot validates within seconds → your config is committed as `domains/<base-domain>/<name>.json` → DNS resolves worldwide in ~5 minutes.
+
+## Naming rules
+
+- Up to 4 levels: `s1.service.yourname.oxyd.space`.
+- Labels: lowercase letters, digits and hyphens.
+- Reserved names ([list](https://github.com/YoannDev90/oxyd.space/blob/main/config/reserved_names.txt)) cannot END a hostname: `nextcloud.oxyd.space` is blocked so that people can run `nextcloud.theirname.oxyd.space` instead. Nesting under your own namespace is encouraged.
+- Maximum 10 subdomains per GitHub account. Ownership is tied to your account; updates/deletes are done by opening a new issue with the corresponding request type.
+
+## Supported DNS records
+
+- CNAME (websites: GitHub Pages, Vercel, Netlify…), A / AAAA (servers), TXT (verifications).
+- Optional automatic `www.` mirror of all records.
+- TTL configurable between 60 and 86400 seconds (default 3600).
+- MX records and NS delegation are not available.
+
+## Domain lifetime
+
+The flagship domain is registered one year at a time. One month before expiry it moves to a cheaper successor domain: every registered subdomain is migrated automatically and old names become permanent redirects.
+
+## Links
+
+- [Landing page](https://oxyd.space/): availability checker, docs, FAQ.
+- [Repository](https://github.com/YoannDev90/oxyd.space): source code, registered domains (`domains/` directory), MIT license.
+- [Contributor docs (README)](https://github.com/YoannDev90/oxyd.space#readme): rules and examples.
+- [Taken domains](https://github.com/YoannDev90/oxyd.space/tree/main/domains): browse existing registrations per base domain.
+- [Maintainer guide](https://github.com/YoannDev90/oxyd.space/blob/main/MAINTAINER.md): self-hosting this bot for your own domain.
+
+## Abuse
+
+Subdomains used for phishing, malware, spam or illegal content are removed without notice. Report abuse by opening a regular issue on the repository.
