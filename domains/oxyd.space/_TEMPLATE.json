@@ -1,0 +1,12 @@
+{
+  "owner": {
+    "github": "GitHub username",
+    "github_id": 123456789
+  },
+  "records": [
+    {
+      "type": "CNAME",
+      "value": "githubusername.github.io"
+    }
+  ]
+}
