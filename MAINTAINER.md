@@ -37,17 +37,7 @@ All DNS tokens live in `config/secrets.enc.json`, encrypted with [sops](https://
 1. Sign up at [desec.io](https://desec.io) (free), add the domain `oxyd.space`.
 2. Namecheap → Domain List → Manage → **Nameservers** → Custom DNS → deSEC's (`ns1.desec.io`, `ns2.desec.org`).
 3. Put the zone API token in the vault under its `token_key` (see [`config/domains.json`](config/domains.json)).
-4. Recreate the landing page records (deSEC UI or API):
-
-```bash
-DESEC_TOKEN=xxx ZONE=oxyd.space
-curl -X POST https://desec.io/api/v1/domains/$ZONE/rrsets/ \
-  -H "Authorization: Token $DESEC_TOKEN" -H "Content-Type: application/json" \
-  -d '{"subname":"","type":"A","ttl":3600,"records":["185.199.108.153.","185.199.109.153.","185.199.110.153.","185.199.111.153."],"comment":"apex"}'
-curl -X POST https://desec.io/api/v1/domains/$ZONE/rrsets/ \
-  -H "Authorization: Token $DESEC_TOKEN" -H "Content-Type: application/json" \
-  -d '{"subname":"www","type":"CNAME","ttl":3600,"records":["YoannDev90.github.io."],"comment":"apex"}'
-```
+4. In the deSEC admin UI, create the two landing page records: `A @` → `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153` and `CNAME www` → `YoannDev90.github.io.`. Anything **not** tagged `oxyd-auto` is left untouched by the sync, so these are safe for life.
 
 > Why not Cloudflare? Free zones created after Sept 2024 are capped at **200 DNS records** — fatal for a public registry. deSEC has none.
 
