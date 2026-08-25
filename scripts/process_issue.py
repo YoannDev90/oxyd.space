@@ -12,14 +12,13 @@ import validate as v
 GITHUB_API = "https://api.github.com"
 TITLE_PREFIX = "Subdomain registration"
 
-LABEL_REQUEST = "Request type"
+LABEL_REQUEST = "What do you want to do?"
 LABEL_BASE = "Base domain"
-LABEL_SUBDOMAIN = "Subdomain"
+LABEL_SUBDOMAIN = "Subdomain name"
 LABEL_RTYPE = "Record type"
 LABEL_RVALUE = "Record value"
-LABEL_EXTRA = "Additional records (optional)"
-LABEL_WWW = "Enable www. prefix"
-LABEL_GHID = "Your GitHub user ID"
+LABEL_EXTRA = "Additional DNS records (optional)"
+LABEL_WWW = "Enable www prefix"
 LABEL_TERMS = "Terms"
 
 REQ_REGISTER = "Register a new subdomain"
@@ -168,7 +167,7 @@ def main():
 
     sections = parse_form(body)
 
-    missing = [l for l in (LABEL_REQUEST, LABEL_BASE, LABEL_SUBDOMAIN, LABEL_RTYPE, LABEL_RVALUE, LABEL_GHID, LABEL_TERMS)
+    missing = [l for l in (LABEL_REQUEST, LABEL_BASE, LABEL_SUBDOMAIN, LABEL_RTYPE, LABEL_RVALUE, LABEL_TERMS)
                if not sections.get(l)]
     if missing:
         fail(["this issue does not use the registration template. "
@@ -180,9 +179,16 @@ def main():
     stem = normalize_subdomain(sections[LABEL_SUBDOMAIN], domain)
     rtype = clean(sections[LABEL_RTYPE]).upper()
     rvalue = clean(sections[LABEL_RVALUE])
-    ghid_raw = clean(sections[LABEL_GHID]).replace("#", "")
     terms_ok = checkbox_checked(sections[LABEL_TERMS])
     want_www = checkbox_checked(sections[LABEL_WWW])
+
+    # Fetch GitHub user ID from API
+    user_status, user_data = v.api_request(f"{GITHUB_API}/users/{author}", token=token)
+    ghid = user_data.get("id", 0) if user_status == 200 and user_data else 0
+    if not ghid:
+        errors = ["could not verify your GitHub account; try again later"]
+        fail(errors)
+        return
 
     extra_records, extra_errors = parse_extra_records(sections[LABEL_EXTRA])
     errors = list(extra_errors)
@@ -194,8 +200,6 @@ def main():
                       f"pick one from the dropdown: {', '.join(v.ZONES)}")
     if not stem:
         errors.append("subdomain is empty")
-    if ghid_raw and not ghid_raw.isdigit():
-        errors.append(f"'{ghid_raw}' is not a valid GitHub user ID (numbers only)")
     if not terms_ok:
         errors.append("you must accept the terms to get a subdomain")
 
@@ -216,7 +220,7 @@ def main():
     cfg = {
         "owner": {
             "github": author,
-            "github_id": int(ghid_raw) if ghid_raw.isdigit() else 0,
+            "github_id": ghid,
         },
         "records": records,
     }

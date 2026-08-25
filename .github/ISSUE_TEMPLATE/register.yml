@@ -6,7 +6,8 @@ body:
   - type: dropdown
     id: request-type
     attributes:
-      label: Request type
+      label: What do you want to do?
+      description: Choose an action
       options:
         - Register a new subdomain
         - Update my records
@@ -18,7 +19,7 @@ body:
     id: base-domain
     attributes:
       label: Base domain
-      description: The domain your subdomain lives under. Maintained in config/domains.json.
+      description: "Your subdomain will be [name].<chosen domain>. Most users pick oxyd.space."
       options:
         - oxyd.space
     validations:
@@ -27,9 +28,13 @@ body:
   - type: input
     id: subdomain
     attributes:
-      label: Subdomain
-      description: Without the base domain. Up to 4 levels — e.g. myname, service.myname or s1.service.myname
-      placeholder: s1.nextcloud.yourname
+      label: Subdomain name
+      description: |
+        Choose the name for your subdomain (the part before .oxyd.space).
+        Examples: `blog`, `api`, `nextcloud`, `s1.api`
+        - Lowercase letters, numbers and hyphens only
+        - Up to 4 levels: `name`, `service.name`, `s1.service.name`
+      placeholder: blog
     validations:
       required: true
 
@@ -37,7 +42,12 @@ body:
     id: record-type
     attributes:
       label: Record type
-      description: CNAME for websites (GitHub Pages, Vercel…), A/AAAA for servers, TXT for verifications
+      description: |
+        What kind of destination are you pointing to?
+        - **CNAME** → Website hosting (GitHub Pages, Vercel, Netlify, Cloudflare Pages…)
+        - **A** → Server IP address (IPv4)
+        - **AAAA** → Server IP address (IPv6)
+        - **TXT** → Verification tokens (Google Search Console, Let's Encrypt…)
       options:
         - CNAME
         - A
@@ -50,7 +60,11 @@ body:
     id: record-value
     attributes:
       label: Record value
-      description: The target hostname, IP address or text value
+      description: |
+        The destination for your subdomain:
+        - CNAME → hostname (e.g. `yourname.github.io`)
+        - A/AAAA → IP address (e.g. `203.0.113.42`)
+        - TXT → text string (e.g. `google-site-verification=abc123`)
       placeholder: yourname.github.io
     validations:
       required: true
@@ -58,26 +72,26 @@ body:
   - type: textarea
     id: additional-records
     attributes:
-      label: Additional records (optional)
-      description: One per line, format "TYPE VALUE [ttl=3600]"
+      label: Additional DNS records (optional)
+      description: |
+        Add extra records if needed, one per line.
+        Format: `TYPE VALUE` or `TYPE VALUE ttl=3600`
+        Example:
+        ```
+        A 203.0.113.10
+        AAAA 2001:db8::1
+        TXT "v=spf1 include:_spf.google.com ~all"
+        ```
       placeholder: |
         A 203.0.113.10
-        TXT my-verification-token
+
   - type: checkboxes
     id: www-prefix
     attributes:
-      label: Enable www. prefix
+      label: Enable www prefix
+      description: If checked, `www.<your subdomain>` will also work with the same records.
       options:
-        - label: Yes, also publish www.<subdomain> with the same records
-
-  - type: input
-    id: github-id
-    attributes:
-      label: Your GitHub user ID
-      description: Numeric ID — get it at https://api.github.com/users/YOUR-USERNAME (the "id" field). It is verified against the GitHub API.
-      placeholder: "12345678"
-    validations:
-      required: true
+        - label: Yes, also create www.<subdomain>
 
   - type: checkboxes
     id: terms
