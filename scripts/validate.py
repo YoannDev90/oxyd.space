@@ -47,7 +47,9 @@ def load_zones():
         with open(CONFIG_FILE, encoding="utf-8") as fh:
             data = json.load(fh)
     except (FileNotFoundError, json.JSONDecodeError):
-        print(f"warning: {CONFIG_FILE} missing or invalid, falling back to '{DEFAULT_ZONE}'")
+        print(
+            f"warning: {CONFIG_FILE} missing or invalid, falling back to '{DEFAULT_ZONE}'"
+        )
         return [DEFAULT_ZONE]
     zones = [
         entry["domain"].lower()
@@ -55,7 +57,9 @@ def load_zones():
         if isinstance(entry, dict) and isinstance(entry.get("domain"), str)
     ]
     if not zones:
-        print(f"warning: no zones listed in {CONFIG_FILE}, falling back to '{DEFAULT_ZONE}'")
+        print(
+            f"warning: no zones listed in {CONFIG_FILE}, falling back to '{DEFAULT_ZONE}'"
+        )
         return [DEFAULT_ZONE]
     return zones
 
@@ -101,7 +105,7 @@ def is_valid_hostname(value):
     labels = value.rstrip(".").lower().split(".")
     if len(labels) < 2:
         return False
-    if not all(HOSTNAME_LABEL_RE.match(l) for l in labels):
+    if not all(HOSTNAME_LABEL_RE.match(line) for line in labels):
         return False
     return bool(re.fullmatch(r"[a-z]{2,63}", labels[-1]))
 
@@ -113,7 +117,7 @@ def git(*args):
 
 def base_domain_paths(base_sha):
     out = git("ls-tree", "-r", "--name-only", base_sha, DOMAINS_DIR + "/")
-    return [l for l in out.splitlines() if l.strip()] if out else []
+    return [line for line in out.splitlines() if line.strip()] if out else []
 
 
 def base_file_content(base_sha, path):
@@ -132,7 +136,10 @@ def parse_owner(content):
 
 def api_request(url, token=None, method="GET", body=None):
     data = None
-    headers = {"Accept": "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28"}
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
     if body is not None:
         data = json.dumps(body).encode()
         headers["Content-Type"] = "application/json"
@@ -154,7 +161,9 @@ def api_request(url, token=None, method="GET", body=None):
 def gh_paginate(path, token):
     items, page = [], 1
     while True:
-        status, batch = api_request(f"https://api.github.com/{path}?per_page=100&page={page}", token=token)
+        status, batch = api_request(
+            f"https://api.github.com/{path}?per_page=100&page={page}", token=token
+        )
         if status != 200 or not isinstance(batch, list):
             raise RuntimeError(f"GitHub API {path} failed: HTTP {status}")
         items.extend(batch)
@@ -171,7 +180,9 @@ class UserIdentityCache:
     def get_id(self, login):
         key = login.lower()
         if key not in self.cache:
-            status, data = api_request(f"https://api.github.com/users/{login}", token=self.token)
+            status, data = api_request(
+                f"https://api.github.com/users/{login}", token=self.token
+            )
             if status == 404:
                 self.cache[key] = ("error", f"'{login}' is not a valid GitHub username")
             elif status != 200 or not isinstance(data, dict):
@@ -206,8 +217,12 @@ def validate_config(name_labels, raw_json, *, expected_owner=None, users=None):
     if not isinstance(github, str) or not USERNAME_RE.match(github):
         errors.append('"owner.github" must be a valid GitHub username')
     if isinstance(github_id, bool) or not isinstance(github_id, int) or github_id < 1:
-        errors.append('"owner.github_id" must be your numeric GitHub user ID (integer > 0)')
-    if "name" in owner and (not isinstance(owner["name"], str) or not (1 <= len(owner["name"]) <= 100)):
+        errors.append(
+            '"owner.github_id" must be your numeric GitHub user ID (integer > 0)'
+        )
+    if "name" in owner and (
+        not isinstance(owner["name"], str) or not (1 <= len(owner["name"]) <= 100)
+    ):
         errors.append('"owner.name" must be a string of 1-100 characters')
     if "email" in owner:
         email = owner["email"]
@@ -220,17 +235,29 @@ def validate_config(name_labels, raw_json, *, expected_owner=None, users=None):
     if "www" in cfg and not isinstance(cfg["www"], bool):
         errors.append('"www" must be true or false')
 
-    if expected_owner and isinstance(github, str) and github.lower() != expected_owner.lower():
+    if (
+        expected_owner
+        and isinstance(github, str)
+        and github.lower() != expected_owner.lower()
+    ):
         errors.append(f'"owner.github" must be your own account ({expected_owner})')
 
-    if users and isinstance(github, str) and USERNAME_RE.match(github) and isinstance(github_id, int) and not isinstance(github_id, bool):
+    if (
+        users
+        and isinstance(github, str)
+        and USERNAME_RE.match(github)
+        and isinstance(github_id, int)
+        and not isinstance(github_id, bool)
+    ):
         state, value = users.get_id(github)
         if state == "error":
             errors.append(f"identity check failed: {value}")
         elif state == "unavailable":
             warnings.append(f"could not verify github_id ({value}), continuing anyway")
         elif value != github_id:
-            errors.append(f"github_id mismatch: {github}'s real ID is {value}, file says {github_id}")
+            errors.append(
+                f"github_id mismatch: {github}'s real ID is {value}, file says {github_id}"
+            )
 
     records = cfg.get("records")
     if not isinstance(records, list) or len(records) == 0:
@@ -274,11 +301,21 @@ def validate_config(name_labels, raw_json, *, expected_owner=None, users=None):
                 errors.append(f"{ref}: TXT value must be a string of 1-255 characters")
         if "ttl" in rec:
             ttl = rec["ttl"]
-            if isinstance(ttl, bool) or not isinstance(ttl, int) or not (TTL_MIN <= ttl <= TTL_MAX):
-                errors.append(f"{ref}: ttl must be an integer between {TTL_MIN} and {TTL_MAX}")
+            if (
+                isinstance(ttl, bool)
+                or not isinstance(ttl, int)
+                or not (TTL_MIN <= ttl <= TTL_MAX)
+            ):
+                errors.append(
+                    f"{ref}: ttl must be an integer between {TTL_MIN} and {TTL_MAX}"
+                )
 
-    if records and not any(isinstance(r, dict) and r.get("type") == "CNAME" for r in records):
-        warnings.append("no CNAME record: make sure you know how to use A/AAAA/TXT records")
+    if records and not any(
+        isinstance(r, dict) and r.get("type") == "CNAME" for r in records
+    ):
+        warnings.append(
+            "no CNAME record: make sure you know how to use A/AAAA/TXT records"
+        )
     return errors, warnings
 
 
@@ -286,10 +323,14 @@ def validate_name(stem):
     errors = []
     labels = stem.split(".")
     if len(labels) > MAX_LABELS:
-        errors.append(f"'{stem}' has too many levels (max {MAX_LABELS}, e.g. s1.service.yourname)")
+        errors.append(
+            f"'{stem}' has too many levels (max {MAX_LABELS}, e.g. s1.service.yourname)"
+        )
     for label in labels:
         if not is_valid_label(label):
-            errors.append(f"'{label}' is not a valid label (a-z, 0-9, hyphens; no leading/trailing hyphen)")
+            errors.append(
+                f"'{label}' is not a valid label (a-z, 0-9, hyphens; no leading/trailing hyphen)"
+            )
     if labels and labels[-1].lower() in RESERVED:
         errors.append(
             f"'{labels[-1]}' is reserved and cannot end a name; put your own namespace last instead, "
@@ -303,7 +344,7 @@ def check_reachability(targets):
     for target in targets[:10]:
         req = urllib.request.Request(f"https://{target}/", method="HEAD")
         try:
-            with urllib.request.urlopen(req, timeout=TIMEOUT) as res:
+            with urllib.request.urlopen(req, timeout=TIMEOUT) as _:
                 results.append((target, True))
         except urllib.error.HTTPError:
             results.append((target, True))
@@ -337,7 +378,9 @@ def run_local_mode():
     problems = []
     for zone, stem, path in files:
         if zone not in ZONES:
-            problems.append(f"{path}: unknown zone '{zone}' (not listed in {CONFIG_FILE})")
+            problems.append(
+                f"{path}: unknown zone '{zone}' (not listed in {CONFIG_FILE})"
+            )
         errs = validate_name(stem)
         with open(path, encoding="utf-8") as fh:
             cfg_errs, _ = validate_config(stem, fh.read())
@@ -349,7 +392,9 @@ def run_local_mode():
         print(f"\nValidation FAILED with {len(problems)} problem(s).")
         return 1
     zones_touched = sorted({z for z, _, _ in files})
-    print(f"All {len(files)} domain file(s) across {len(zones_touched)} zone(s) are valid. ✅")
+    print(
+        f"All {len(files)} domain file(s) across {len(zones_touched)} zone(s) are valid. ✅"
+    )
     return 0
 
 

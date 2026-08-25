@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Orphan Detector - Find subdomains pointing to dead targets."""
+
 import json
-import os
 import socket
 import subprocess
 import sys
@@ -45,12 +45,14 @@ def check_target_alive(target, rtype, timeout=5):
             # Check if hostname resolves
             result = subprocess.run(
                 ["dig", "+short", target, "A"],
-                capture_output=True, text=True, timeout=timeout
+                capture_output=True,
+                text=True,
+                timeout=timeout,
             )
             if not result.stdout.strip():
                 return False, "CNAME target does not resolve"
             return True, "OK"
-        
+
         elif rtype == "A":
             # Check if IP is reachable (TCP port 80)
             ip = target.strip()
@@ -65,7 +67,7 @@ def check_target_alive(target, rtype, timeout=5):
                     return False, f"Port 80 unreachable (error {result})"
             except Exception as e:
                 return False, f"Connection failed: {e}"
-        
+
         elif rtype == "AAAA":
             # Check if IP is reachable (TCP port 80)
             ip = target.strip()
@@ -80,14 +82,14 @@ def check_target_alive(target, rtype, timeout=5):
                     return False, f"Port 80 unreachable (error {result})"
             except Exception as e:
                 return False, f"Connection failed: {e}"
-        
+
         elif rtype == "TXT":
             # TXT records are just text, no reachability check needed
             return True, "TXT record (no check needed)"
-        
+
         else:
             return False, f"Unknown record type: {rtype}"
-    
+
     except subprocess.TimeoutExpired:
         return False, "DNS query timeout"
     except socket.timeout:
@@ -101,26 +103,28 @@ def check_www_targets(zone, stem, config):
     issues = []
     if not config.get("www", False):
         return issues
-    
+
     www_fqdn = f"www.{stem}.{zone}"
     records = config.get("records", [])
-    
+
     for record in records:
         rtype = record.get("type", "")
         value = record.get("value", "")
-        
+
         if not value:
             continue
-        
+
         alive, reason = check_target_alive(value, rtype)
         if not alive:
-            issues.append({
-                "fqdn": www_fqdn,
-                "type": rtype,
-                "value": value,
-                "reason": reason,
-            })
-    
+            issues.append(
+                {
+                    "fqdn": www_fqdn,
+                    "type": rtype,
+                    "value": value,
+                    "reason": reason,
+                }
+            )
+
     return issues
 
 
@@ -128,45 +132,45 @@ def main():
     """Main entry point."""
     zones = load_zones()
     subdomains = list(iter_subdomains())
-    
+
     if not subdomains:
         print("No subdomains found in domains/ directory.")
         return 0
-    
+
     print(f"Checking {len(subdomains)} subdomains for dead targets...\n")
-    
+
     total = 0
     healthy = 0
     orphans = 0
-    
+
     for zone, stem, config_path in subdomains:
         if zone not in zones:
             continue
-        
+
         total += 1
         config = load_config(config_path)
         fqdn = f"{stem}.{zone}"
         records = config.get("records", [])
-        
+
         issues = []
-        
+
         for record in records:
             rtype = record.get("type", "")
             value = record.get("value", "")
-            
+
             if not value:
                 issues.append(f"{rtype}: empty value")
                 continue
-            
+
             alive, reason = check_target_alive(value, rtype)
             if not alive:
                 issues.append(f"{rtype} {value}: {reason}")
-        
+
         # Check www targets
         www_issues = check_www_targets(zone, stem, config)
         for issue in www_issues:
             issues.append(f"www.{issue['type']} {issue['value']}: {issue['reason']}")
-        
+
         if issues:
             orphans += 1
             print(f"⚠️  {fqdn}")
@@ -175,7 +179,7 @@ def main():
         else:
             healthy += 1
             print(f"✅ {fqdn}")
-    
+
     print(f"\nSummary: {healthy}/{total} healthy, {orphans} with dead targets")
     return 1 if orphans > 0 else 0
 

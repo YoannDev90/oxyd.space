@@ -5,6 +5,7 @@ Tokens live in a sops-encrypted config/secrets.enc.json (one key per zone,
 see config/secrets.example.json). GitHub only stores the single age private
 key as the SOPS_AGE_KEY secret.
 """
+
 import json
 import os
 import re
@@ -34,12 +35,16 @@ def load_zone_registry():
         raise RuntimeError(f"{CONFIG_FILE} not found")
     except json.JSONDecodeError as e:
         raise RuntimeError(f"{CONFIG_FILE} is not valid JSON: {e}")
-    zones = [z for z in (data.get("zones") or []) if isinstance(z, dict) and z.get("domain")]
+    zones = [
+        z for z in (data.get("zones") or []) if isinstance(z, dict) and z.get("domain")
+    ]
     if not zones:
         raise RuntimeError(f"no zones defined in {CONFIG_FILE}")
     for z in zones:
         if not isinstance(z.get("token_key"), str) or not z["token_key"]:
-            raise RuntimeError(f"zone {z['domain']}: missing 'token_key' entry in {CONFIG_FILE}")
+            raise RuntimeError(
+                f"zone {z['domain']}: missing 'token_key' entry in {CONFIG_FILE}"
+            )
     return zones
 
 
@@ -48,7 +53,9 @@ def decrypt_secrets():
     if proc.returncode != 0:
         detail = (proc.stderr or proc.stdout or "").strip().splitlines()
         hint = f" ({detail[-1]})" if detail else ""
-        raise RuntimeError(f"could not decrypt {SECRETS_FILE}{hint}. Is sops installed and SOPS_AGE_KEY set?")
+        raise RuntimeError(
+            f"could not decrypt {SECRETS_FILE}{hint}. Is sops installed and SOPS_AGE_KEY set?"
+        )
     return json.loads(proc.stdout)
 
 
@@ -65,12 +72,18 @@ def token_for(zone_cfg, secrets):
 
 def api(method, path, body=None, token=None):
     data = None
-    headers = {"Authorization": f"Token {token}", "Content-Type": "application/json", "Accept": "application/json"}
+    headers = {
+        "Authorization": f"Token {token}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+    }
     if body is not None:
         data = json.dumps(body).encode()
     last_error = None
     for attempt in range(1, MAX_RETRIES + 1):
-        req = urllib.request.Request(f"{DESEC_API}{path}", data=data, method=method, headers=headers)
+        req = urllib.request.Request(
+            f"{DESEC_API}{path}", data=data, method=method, headers=headers
+        )
         try:
             with urllib.request.urlopen(req, timeout=TIMEOUT) as res:
                 raw = res.read().decode()
@@ -83,13 +96,17 @@ def api(method, path, body=None, token=None):
                 time.sleep(delay)
                 last_error = f"HTTP {e.code}"
                 continue
-            raise RuntimeError(f"deSEC API {method} {path} failed: HTTP {e.code} {raw[:200]}")
+            raise RuntimeError(
+                f"deSEC API {method} {path} failed: HTTP {e.code} {raw[:200]}"
+            )
         except urllib.error.URLError as e:
             delay = min(2 ** (attempt - 1), 8)
             print(f"network error ({e.reason}), retrying in {delay}s…")
             time.sleep(delay)
             last_error = str(e.reason)
-    raise RuntimeError(f"deSEC API {method} {path} failed after {MAX_RETRIES} attempts ({last_error})")
+    raise RuntimeError(
+        f"deSEC API {method} {path} failed after {MAX_RETRIES} attempts ({last_error})"
+    )
 
 
 def pres_content(rtype, value):
@@ -98,7 +115,7 @@ def pres_content(rtype, value):
         return value.rstrip(".").lower() + "."
     if rtype == "TXT":
         text = value.strip().strip('"')
-        chunks = [text[i:i + 255] for i in range(0, len(text), 255)]
+        chunks = [text[i : i + 255] for i in range(0, len(text), 255)]
         return " ".join(f'"{c}"' for c in chunks)
     return value.lower()
 
@@ -107,7 +124,7 @@ def normalize_subname(value, zone):
     value = str(value).rstrip(".")
     suffix = f".{zone}"
     if value.lower().endswith(suffix.lower()):
-        value = value[:-len(suffix)]
+        value = value[: -len(suffix)]
     return value.lower()
 
 
@@ -124,7 +141,9 @@ def load_configs(zone):
             try:
                 cfg = json.load(fh)
             except json.JSONDecodeError as e:
-                raise RuntimeError(f"{DOMAINS_DIR}/{zone}/{fname} is not valid JSON: {e}")
+                raise RuntimeError(
+                    f"{DOMAINS_DIR}/{zone}/{fname} is not valid JSON: {e}"
+                )
         configs.append((label, cfg))
     return configs
 
@@ -133,7 +152,9 @@ def desired_records(configs):
     desired = {}
     for label, cfg in configs:
         owner = cfg.get("owner") or {}
-        tag = MANAGED_TAG + (f" owner=@{owner['github']}" if isinstance(owner.get("github"), str) else "")
+        tag = MANAGED_TAG + (
+            f" owner=@{owner['github']}" if isinstance(owner.get("github"), str) else ""
+        )
         names = [label]
         if cfg.get("www") is True:
             names.append(f"www.{label}")
@@ -145,13 +166,18 @@ def desired_records(configs):
                     raise RuntimeError(f"{label}: unsupported record type {rtype!r}")
                 content = pres_content(rtype, rec.get("value"))
                 key = (subname, rtype)
-                entry = desired.setdefault(key, {
-                    "subname": subname,
-                    "type": rtype,
-                    "ttl": rec["ttl"] if isinstance(rec.get("ttl"), int) else DEFAULT_TTL,
-                    "records": [],
-                    "comment": tag[:255],
-                })
+                entry = desired.setdefault(
+                    key,
+                    {
+                        "subname": subname,
+                        "type": rtype,
+                        "ttl": rec["ttl"]
+                        if isinstance(rec.get("ttl"), int)
+                        else DEFAULT_TTL,
+                        "records": [],
+                        "comment": tag[:255],
+                    },
+                )
                 if content not in entry["records"]:
                     entry["records"].append(content)
     for entry in desired.values():
@@ -163,7 +189,7 @@ def fetch_all_rrsets(zone, token):
     rrsets = []
     path = f"/domains/{zone}/rrsets/"
     while path:
-        status_code, batch = None, None
+        _, batch = None, None
         req = urllib.request.Request(
             f"{DESEC_API}{path}",
             headers={"Authorization": f"Token {token}", "Accept": "application/json"},
@@ -184,22 +210,25 @@ def fetch_all_rrsets(zone, token):
 
 def diff(existing, desired, zone):
     managed = [
-        r for r in existing
+        r
+        for r in existing
         if isinstance(r.get("comment"), str)
         and r["comment"].startswith(MANAGED_TAG)
         and r.get("type") in ALLOWED_TYPES
         and normalize_subname(r.get("subname", ""), zone) != ""
     ]
     existing_by_key = {
-        (normalize_subname(r["subname"], zone), r["type"]): r
-        for r in managed
+        (normalize_subname(r["subname"], zone), r["type"]): r for r in managed
     }
     creates, updates, deletes = [], [], []
     for key, rec in desired.items():
         current = existing_by_key.get(key)
         if current is None:
             creates.append(rec)
-        elif sorted(current.get("records") or []) != rec["records"] or int(current.get("ttl", 0)) != rec["ttl"]:
+        elif (
+            sorted(current.get("records") or []) != rec["records"]
+            or int(current.get("ttl", 0)) != rec["ttl"]
+        ):
             updates.append((current, rec))
     for key, current in existing_by_key.items():
         if key not in desired:
@@ -213,10 +242,14 @@ def sync_zone(zone_cfg, secrets, dry_run):
     configs = load_configs(zone)
     desired = desired_records(configs)
     total_records = sum(len(e["records"]) for e in desired.values())
-    print(f"\n=== {zone}: {len(desired)} rrset(s), {total_records} record(s) from {len(configs)} subdomain(s)")
+    print(
+        f"\n=== {zone}: {len(desired)} rrset(s), {total_records} record(s) from {len(configs)} subdomain(s)"
+    )
     for rec in sorted(desired.values(), key=lambda r: (r["subname"], r["type"])):
         for content in rec["records"]:
-            print(f"  = {rec['type']} {rec['subname']}.{zone} → {content} (ttl={rec['ttl']})")
+            print(
+                f"  = {rec['type']} {rec['subname']}.{zone} → {content} (ttl={rec['ttl']})"
+            )
 
     if secrets is None:
         return True
@@ -234,11 +267,15 @@ def sync_zone(zone_cfg, secrets, dry_run):
     existing = fetch_all_rrsets(zone, token)
     creates, updates, deletes = diff(existing, desired, zone)
 
-    print(f"\nPlan for {zone}: {len(creates)} to create, {len(updates)} to update, {len(deletes)} to delete.")
+    print(
+        f"\nPlan for {zone}: {len(creates)} to create, {len(updates)} to update, {len(deletes)} to delete."
+    )
     for rec in creates:
         print(f"  + {rec['type']} {rec['subname']}.{zone} → {' '.join(rec['records'])}")
     for cur, rec in updates:
-        print(f"  ~ {rec['type']} {rec['subname']}.{zone} (ttl {cur.get('ttl')} → {rec['ttl']})")
+        print(
+            f"  ~ {rec['type']} {rec['subname']}.{zone} (ttl {cur.get('ttl')} → {rec['ttl']})"
+        )
     for cur in deletes:
         print(f"  - {cur['type']} {cur['subname']}.{zone}")
 
@@ -251,13 +288,18 @@ def sync_zone(zone_cfg, secrets, dry_run):
     failures = 0
     for rec in creates:
         try:
-            api("POST", f"/domains/{zone}/rrsets/", body={
-                "subname": rec["subname"],
-                "type": rec["type"],
-                "ttl": rec["ttl"],
-                "records": rec["records"],
-                "comment": rec["comment"],
-            }, token=token)
+            api(
+                "POST",
+                f"/domains/{zone}/rrsets/",
+                body={
+                    "subname": rec["subname"],
+                    "type": rec["type"],
+                    "ttl": rec["ttl"],
+                    "records": rec["records"],
+                    "comment": rec["comment"],
+                },
+                token=token,
+            )
             print(f"created {rec['type']} {rec['subname']}.{zone}")
         except RuntimeError as e:
             failures += 1
@@ -265,11 +307,16 @@ def sync_zone(zone_cfg, secrets, dry_run):
     for cur, rec in updates:
         try:
             sub = urllib.parse.quote(rec["subname"])
-            api("PATCH", f"/domains/{zone}/rrsets/{sub}/{rec['type']}/", body={
-                "ttl": rec["ttl"],
-                "records": rec["records"],
-                "comment": rec["comment"],
-            }, token=token)
+            api(
+                "PATCH",
+                f"/domains/{zone}/rrsets/{sub}/{rec['type']}/",
+                body={
+                    "ttl": rec["ttl"],
+                    "records": rec["records"],
+                    "comment": rec["comment"],
+                },
+                token=token,
+            )
             print(f"updated {rec['type']} {rec['subname']}.{zone}")
         except RuntimeError as e:
             failures += 1

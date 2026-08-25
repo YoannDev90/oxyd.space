@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """SSL Checker - Verify HTTPS certificates for subdomains."""
+
 import json
-import os
 import socket
 import ssl
 import subprocess
@@ -41,11 +41,11 @@ def check_ssl_certificate(hostname, port=443, timeout=5):
         with socket.create_connection((hostname, port), timeout=timeout) as sock:
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                 cert = ssock.getpeercert()
-                
+
                 # Extract certificate info
                 subject = dict(x[0] for x in cert.get("subject", []))
                 issuer = dict(x[0] for x in cert.get("issuer", []))
-                
+
                 # Parse expiration date
                 not_after = cert.get("notAfter", "")
                 if not_after:
@@ -54,33 +54,37 @@ def check_ssl_certificate(hostname, port=443, timeout=5):
                     days_left = (expiry - datetime.utcnow()).days
                 else:
                     days_left = -1
-                
+
                 info = {
                     "subject": subject.get("commonName", "unknown"),
-                    "issuer": issuer.get("organizationName", issuer.get("commonName", "unknown")),
+                    "issuer": issuer.get(
+                        "organizationName", issuer.get("commonName", "unknown")
+                    ),
                     "expiry": not_after,
                     "days_left": days_left,
                     "version": ssock.version(),
                     "cipher": ssock.cipher()[0] if ssock.cipher() else "unknown",
                 }
-                
+
                 # Check for issues
                 issues = []
                 if days_left < 0:
                     issues.append(f"Certificate expired {abs(days_left)} days ago")
                 elif days_left < 30:
                     issues.append(f"Certificate expires in {days_left} days")
-                
+
                 # Check subject matches
                 cert_cn = subject.get("commonName", "")
                 cert_san = [e[1] for e in cert.get("subjectAltName", [])]
                 if hostname not in cert_san and cert_cn != hostname:
                     # Allow wildcard matches
-                    if not (cert_cn.startswith("*.") and hostname.endswith(cert_cn[1:])):
+                    if not (
+                        cert_cn.startswith("*.") and hostname.endswith(cert_cn[1:])
+                    ):
                         issues.append(f"Hostname mismatch: cert is for {cert_cn}")
-                
+
                 return len(issues) == 0, info, issues
-    
+
     except ssl.SSLCertVerificationError as e:
         return False, {}, [f"SSL verification failed: {e}"]
     except socket.timeout:
@@ -98,67 +102,70 @@ def check_http_redirect(hostname, timeout=5):
     try:
         result = subprocess.run(
             ["curl", "-sI", "-m", str(timeout), f"http://{hostname}/"],
-            capture_output=True, text=True, timeout=timeout + 2
+            capture_output=True,
+            text=True,
+            timeout=timeout + 2,
         )
-        
+
         lines = result.stdout.split("\n")
-        status_line = next((l for l in lines if l.startswith("HTTP/")), None)
-        location_line = next((l for l in lines if l.lower().startswith("location:")), None)
-        
+        status_line = next((line for line in lines if line.startswith("HTTP/")), None)
+        location_line = next(
+            (line for line in lines if line.lower().startswith("location:")), None
+        )
+
         if not status_line:
             return False, {"error": "No HTTP response"}
-        
+
         status_code = int(status_line.split()[1]) if len(status_line.split()) > 1 else 0
-        
+
         info = {
             "status": status_code,
             "redirects_to_https": False,
             "redirect_url": "",
         }
-        
+
         if location_line:
             redirect_url = location_line.split(":", 1)[1].strip()
             info["redirect_url"] = redirect_url
             info["redirects_to_https"] = redirect_url.startswith("https://")
-        
+
         return info["redirects_to_https"], info
-    
+
     except (subprocess.TimeoutExpired, FileNotFoundError):
         return False, {"error": "HTTP check failed"}
 
 
 def main():
     """Main entry point."""
-    zones = load_zones()
     subdomains = list(iter_subdomains())
-    
+
     if not subdomains:
         print("No subdomains found in domains/ directory.")
         return 0
-    
+
     print(f"Checking SSL certificates for {len(subdomains)} subdomains...\n")
-    
+
     total = 0
     healthy = 0
     issues_found = 0
-    
+
     for zone, stem, config_path in subdomains:
         fqdn = f"{stem}.{zone}"
         total += 1
-        
+
         # Check SSL certificate
         cert_ok, cert_info, cert_issues = check_ssl_certificate(fqdn)
-        
+
         # Check HTTP redirect (only for CNAME records pointing to web hosts)
         config = json.loads(config_path.read_text())
         records = config.get("records", [])
         has_cname = any(r.get("type") == "CNAME" for r in records)
-        
+
         http_ok = True
         http_info = {}
         if has_cname:
             http_ok, http_info = check_http_redirect(fqdn)
-        
+
         # Report
         if cert_ok and http_ok:
             healthy += 1
@@ -173,7 +180,7 @@ def main():
                 print(f"   - {issue}")
             if not http_ok and http_info.get("error"):
                 print(f"   - HTTP: {http_info['error']}")
-    
+
     print(f"\nSummary: {healthy}/{total} healthy, {issues_found} with issues")
     return 1 if issues_found > 0 else 0
 

@@ -1,3 +1,4 @@
 [tools]
 age = "latest"
 sops = "latest"
+pre-commit = "latest"

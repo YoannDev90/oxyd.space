@@ -44,7 +44,7 @@ jobs:
           import yaml
           import sys
           from pathlib import Path
-          
+
           errors = []
           for f in Path('.').rglob('*.yml'):
               if '.git' in str(f) or 'node_modules' in str(f):
@@ -54,7 +54,7 @@ jobs:
                       yaml.safe_load(fh)
               except yaml.YAMLError as e:
                   errors.append(f'{f}: {e}')
-          
+
           for f in Path('.').rglob('*.yaml'):
               if '.git' in str(f) or 'node_modules' in str(f):
                   continue
@@ -63,7 +63,7 @@ jobs:
                       yaml.safe_load(fh)
               except yaml.YAMLError as e:
                   errors.append(f'{f}: {e}')
-          
+
           if errors:
               for e in errors:
                   print(f'❌ {e}')

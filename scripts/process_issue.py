@@ -73,11 +73,15 @@ def parse_extra_records(block):
             continue
         tokens = line.split()
         if len(tokens) < 2:
-            errors.append(f"additional record line {lineno}: expected 'TYPE VALUE', got '{line}'")
+            errors.append(
+                f"additional record line {lineno}: expected 'TYPE VALUE', got '{line}'"
+            )
             continue
         rtype = tokens[0].upper()
         if rtype not in v.ALLOWED_TYPES:
-            errors.append(f"additional record line {lineno}: unknown type '{tokens[0]}'")
+            errors.append(
+                f"additional record line {lineno}: unknown type '{tokens[0]}'"
+            )
             continue
         rec = {"type": rtype, "value": tokens[1]}
         for flag in tokens[2:]:
@@ -87,13 +91,17 @@ def parse_extra_records(block):
                 except ValueError:
                     errors.append(f"additional record line {lineno}: bad ttl '{flag}'")
             else:
-                errors.append(f"additional record line {lineno}: unknown option '{flag}'")
+                errors.append(
+                    f"additional record line {lineno}: unknown option '{flag}'"
+                )
         records.append(rec)
     return records, errors
 
 
 def fetch_remote_file(repo, path, token):
-    status, data = v.api_request(f"{GITHUB_API}/repos/{repo}/contents/{path}", token=token)
+    status, data = v.api_request(
+        f"{GITHUB_API}/repos/{repo}/contents/{path}", token=token
+    )
     if status == 200 and isinstance(data, dict) and data.get("sha"):
         content = ""
         try:
@@ -107,7 +115,9 @@ def fetch_remote_file(repo, path, token):
 def post_comment(repo, number, body, token):
     status, _ = v.api_request(
         f"{GITHUB_API}/repos/{repo}/issues/{number}/comments",
-        token=token, method="POST", body={"body": body},
+        token=token,
+        method="POST",
+        body={"body": body},
     )
     if status not in (200, 201):
         raise RuntimeError(f"comment failed: HTTP {status}")
@@ -117,16 +127,30 @@ def finish_issue(repo, number, ok, body, label, token):
     status, existing = v.api_request(
         f"{GITHUB_API}/repos/{repo}/issues/{number}/comments?per_page=100", token=token
     )
-    prev = next((c for c in (existing or []) if "<!-- oxyd-issue-bot -->" in (c.get("body") or "")), None)
+    prev = next(
+        (
+            c
+            for c in (existing or [])
+            if "<!-- oxyd-issue-bot -->" in (c.get("body") or "")
+        ),
+        None,
+    )
     url = prev["url"] if prev else f"{GITHUB_API}/repos/{repo}/issues/{number}/comments"
-    v.api_request(url, token=token, method="PATCH" if prev else "POST", body={"body": body})
+    v.api_request(
+        url, token=token, method="PATCH" if prev else "POST", body={"body": body}
+    )
     v.api_request(
         f"{GITHUB_API}/repos/{repo}/issues/{number}",
-        token=token, method="PATCH",
+        token=token,
+        method="PATCH",
         body={"state": "closed", "state_reason": "completed" if ok else "not_planned"},
     )
-    v.api_request(f"{GITHUB_API}/repos/{repo}/issues/{number}/labels", token=token,
-                  method="POST", body={"labels": [label]})
+    v.api_request(
+        f"{GITHUB_API}/repos/{repo}/issues/{number}/labels",
+        token=token,
+        method="POST",
+        body={"labels": [label]},
+    )
 
 
 def main():
@@ -167,11 +191,25 @@ def main():
 
     sections = parse_form(body)
 
-    missing = [l for l in (LABEL_REQUEST, LABEL_BASE, LABEL_SUBDOMAIN, LABEL_RTYPE, LABEL_RVALUE, LABEL_TERMS)
-               if not sections.get(l)]
+    missing = [
+        line
+        for line in (
+            LABEL_REQUEST,
+            LABEL_BASE,
+            LABEL_SUBDOMAIN,
+            LABEL_RTYPE,
+            LABEL_RVALUE,
+            LABEL_TERMS,
+        )
+        if not sections.get(line)
+    ]
     if missing:
-        fail(["this issue does not use the registration template. "
-              "Please open a new one via the 'Subdomain registration' template."])
+        fail(
+            [
+                "this issue does not use the registration template. "
+                "Please open a new one via the 'Subdomain registration' template."
+            ]
+        )
         return
 
     request = clean(sections[LABEL_REQUEST])
@@ -196,8 +234,10 @@ def main():
     if request not in (REQ_REGISTER, REQ_UPDATE, REQ_DELETE):
         errors.append(f"unknown request type '{request}'")
     if domain is None:
-        errors.append(f"'{clean(sections[LABEL_BASE])}' is not a base domain managed here; "
-                      f"pick one from the dropdown: {', '.join(v.ZONES)}")
+        errors.append(
+            f"'{clean(sections[LABEL_BASE])}' is not a base domain managed here; "
+            f"pick one from the dropdown: {', '.join(v.ZONES)}"
+        )
     if not stem:
         errors.append("subdomain is empty")
     if not terms_ok:
@@ -212,7 +252,10 @@ def main():
 
     seen = set()
     for rec in records:
-        key_norm = (rec["type"], str(rec["value"]).lower() if rec["type"] != "TXT" else rec["value"])
+        key_norm = (
+            rec["type"],
+            str(rec["value"]).lower() if rec["type"] != "TXT" else rec["value"],
+        )
         if key_norm in seen:
             errors.append(f"duplicate record {rec['type']} {rec['value']}")
         seen.add(key_norm)
@@ -236,21 +279,36 @@ def main():
     if stem and domain and request in (REQ_UPDATE, REQ_DELETE):
         remote = fetch_remote_file(repo, path, token)
         if remote is None:
-            errors.append(f"{stem}.{domain} does not exist — nothing to update or delete")
+            errors.append(
+                f"{stem}.{domain} does not exist — nothing to update or delete"
+            )
         else:
             previous_owner = v.parse_owner(remote["content"])
             if previous_owner is None or previous_owner.lower() != author.lower():
-                errors.append(f"you do not own {stem}.{domain}; transfers are not allowed")
-    elif stem and domain and request == REQ_REGISTER and (local_exists or fetch_remote_file(repo, path, token)):
+                errors.append(
+                    f"you do not own {stem}.{domain}; transfers are not allowed"
+                )
+    elif (
+        stem
+        and domain
+        and request == REQ_REGISTER
+        and (local_exists or fetch_remote_file(repo, path, token))
+    ):
         errors.append(f"{stem}.{domain} is already taken")
 
     holdings = v.count_owner_domains(author)
     if request == REQ_REGISTER and holdings + 1 > v.MAX_DOMAINS_PER_USER:
-        errors.append(f"@{author} already owns {holdings} subdomains (max {v.MAX_DOMAINS_PER_USER})")
+        errors.append(
+            f"@{author} already owns {holdings} subdomains (max {v.MAX_DOMAINS_PER_USER})"
+        )
 
     if request != REQ_DELETE:
-        config_errors, _ = v.validate_config(stem, json.dumps(cfg), expected_owner=author,
-                                             users=v.UserIdentityCache(token))
+        config_errors, _ = v.validate_config(
+            stem,
+            json.dumps(cfg),
+            expected_owner=author,
+            users=v.UserIdentityCache(token),
+        )
         errors.extend(config_errors)
 
     if errors:
@@ -264,11 +322,16 @@ def main():
     if request == REQ_DELETE:
         status, _ = v.api_request(
             f"{GITHUB_API}/repos/{repo}/contents/{path}",
-            token=token, method="DELETE",
+            token=token,
+            method="DELETE",
             body={"message": f"delete({author}): {fqdn}", "sha": remote["sha"]},
         )
         if status not in (200, 204):
-            fail([f"could not delete the file (HTTP {status}); maybe a concurrent change? Try again."])
+            fail(
+                [
+                    f"could not delete the file (HTTP {status}); maybe a concurrent change? Try again."
+                ]
+            )
             return
         if local_exists:
             os.remove(path)
@@ -283,10 +346,16 @@ def main():
             put_body["sha"] = remote["sha"]
         status, data = v.api_request(
             f"{GITHUB_API}/repos/{repo}/contents/{path}",
-            token=token, method="PUT", body=put_body,
+            token=token,
+            method="PUT",
+            body=put_body,
         )
         if status not in (200, 201):
-            fail([f"could not write the configuration (HTTP {status}); the name may have just been taken. Try again."])
+            fail(
+                [
+                    f"could not write the configuration (HTTP {status}); the name may have just been taken. Try again."
+                ]
+            )
             return
         os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, "w", encoding="utf-8") as fh:
@@ -297,17 +366,23 @@ def main():
     if want_www and request != REQ_DELETE:
         fqdns.append(f"**www.{fqdn}**")
 
-    rows = "\n".join(
-        f"| `{r['type']}` | `{r['value']}` |"
-        for r in records
-    ) if request != REQ_DELETE else "_all records removed_"
+    rows = (
+        "\n".join(f"| `{r['type']}` | `{r['value']}` |" for r in records)
+        if request != REQ_DELETE
+        else "_all records removed_"
+    )
 
     success_text = (
         "<!-- oxyd-issue-bot -->\n"
         f"## ✅ Subdomain {verb}\n\n"
         f"Hey @{author}, here is your configuration:\n\n"
-        + "\n".join(f"- 🌐 {f}" for f in fqdns) + "\n\n"
-        + ("| Type | Value |\n|---|---|\n" + rows + "\n" if request != REQ_DELETE else "")
+        + "\n".join(f"- 🌐 {f}" for f in fqdns)
+        + "\n\n"
+        + (
+            "| Type | Value |\n|---|---|\n" + rows + "\n"
+            if request != REQ_DELETE
+            else ""
+        )
         + "\nDNS changes propagate within minutes (deSEC TTLs allow fast updates). "
         "This issue is now closed — open a new 'Subdomain registration' issue to modify it later."
     )
@@ -323,7 +398,8 @@ def main():
     except Exception as e:
         print(f"warning: DNS sync failed: {e}", file=sys.stderr)
         post_comment(
-            repo, number,
+            repo,
+            number,
             "⚠️ The configuration was committed but the DNS sync failed. "
             "A maintainer can re-run the **Update DNS** workflow.",
             token,

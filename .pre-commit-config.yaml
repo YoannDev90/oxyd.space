@@ -1,0 +1,32 @@
+repos:
+  # General hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+        exclude: '^assets/dns\.json$'
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+
+  # Python linting with ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.0
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+        files: ^(scripts|tests)/
+      - id: ruff-format
+        files: ^(scripts|tests)/
+
+  # Validate domain configs
+  - repo: local
+    hooks:
+      - id: validate-domains
+        name: Validate domain configs
+        entry: python scripts/validate.py
+        language: system
+        files: '^domains/'
+        pass_filenames: false
