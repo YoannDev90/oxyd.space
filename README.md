@@ -34,8 +34,9 @@ Fill in the [registration template](https://github.com/YoannDev90/oxyd.space/iss
 | Subdomain            | Up to 4 levels — `myname`, `service.myname`, `s1.service.myname`    |
 | Record type + value  | CNAME (websites), A/AAAA (servers), TXT (verifications)             |
 | Additional records   | Optional, one per line: `TYPE VALUE [ttl=3600]`                     |
-| Enable www. prefix   | Also publishes `www.<subdomain>` with the same records              |
-| Your GitHub user ID  | Numeric ID from `https://api.github.com/users/YOU` — API-verified   |
+| Enable www prefix    | Also publishes `www.<subdomain>` with the same records              |
+
+**Note:** Your GitHub user ID is automatically verified via the GitHub API.
 
 The bot generates the config file for you (stored under `domains/<base-domain>/`):
 
@@ -88,6 +89,14 @@ The bot generates the config file for you (stored under `domains/<base-domain>/`
 ### More base domains
 
 `oxyd.space` is the flagship, but other domain owners can plug **their own domains** into this same bot (same rules, same automation — see [MAINTAINER.md](MAINTAINER.md) → *Onboard another domain*). Available zones are listed in the issue form's **Base domain** dropdown and in [`config/domains.json`](config/domains.json).
+
+### AI-friendly documentation
+
+For automated registration using `gh` CLI or AI assistants, see [docs/registration.md](docs/registration.md). It includes:
+- Step-by-step guides for common use cases
+- Ready-to-use `gh issue create` commands
+- Naming rules and troubleshooting
+- AI assistant instructions for helping users
 
 ### Domain lifetime
 
