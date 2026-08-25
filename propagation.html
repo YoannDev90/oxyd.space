@@ -23,7 +23,7 @@ body{
   color:var(--text);font-family:"Inter",system-ui,-apple-system,sans-serif;line-height:1.6;min-height:100vh;
 }
 a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
-.container{max-width:860px;margin:0 auto;padding:0 24px}
+.container{max-width:960px;margin:0 auto;padding:0 24px}
 nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);background:rgba(5,8,12,.72);border-bottom:1px solid var(--line)}
 .nav-inner{display:flex;align-items:center;justify-content:space-between;height:60px}
 .logo{font-family:var(--mono);font-weight:700;font-size:16px;color:var(--text);display:flex;align-items:center;gap:8px}
@@ -31,13 +31,24 @@ nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);background:rgba(
 .nav-links{display:flex;gap:20px;font-size:14px}
 .nav-links a{color:var(--muted)}.nav-links a:hover{color:var(--text)}
 
-.tool{margin:48px auto;max-width:720px}
+.tool{margin:40px auto;max-width:860px}
 h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
-.sub{color:var(--muted);font-size:14.5px;margin-bottom:32px}
+.sub{color:var(--muted);font-size:14.5px;margin-bottom:28px}
+
+.map-wrap{
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:20px;margin-bottom:28px;overflow:hidden;position:relative;
+}
+.map-wrap svg{width:100%;height:auto;display:block}
+.map-legend{
+  display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--muted);flex-wrap:wrap;
+}
+.map-legend span{display:flex;align-items:center;gap:5px}
+.map-legend .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 
 .form{display:flex;gap:10px;flex-wrap:wrap}
 .input-wrap{
-  flex:1;min-width:200px;display:flex;align-items:center;gap:0;
+  flex:1;min-width:200px;display:flex;align-items:center;
   background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;
   transition:border-color .15s;
 }
@@ -73,11 +84,14 @@ select:focus{outline:none;border-color:var(--accent)}
 .ips{color:var(--muted);flex:1;word-break:break-all}
 .ms{color:var(--muted);white-space:nowrap}
 .summary{font-family:var(--mono);font-size:13px;color:var(--muted);margin-top:14px}
-.legend{display:flex;gap:20px;margin-top:20px;font-size:12.5px;color:var(--muted)}
-.legend span{display:flex;align-items:center;gap:6px}
-.legend .dot{width:7px;height:7px}
 
-footer{margin-top:80px;padding:24px 0;text-align:center;font-size:13px;color:var(--muted);border-top:1px solid var(--line)}
+.map-dot{transition:fill .3s, r .3s}
+.map-dot.wait{fill:#2a3a50;opacity:.5}
+.map-dot.ok{fill:var(--ok)}
+.map-dot.err{fill:var(--bad)}
+.map-dot:hover{r:4.5;fill:#fff}
+
+footer{margin-top:60px;padding:24px 0;text-align:center;font-size:13px;color:var(--muted);border-top:1px solid var(--line)}
 </style>
 </head>
 <body>
@@ -97,6 +111,105 @@ footer{margin-top:80px;padding:24px 0;text-align:center;font-size:13px;color:var
     <h1>DNS Propagation Checker</h1>
     <p class="sub">Query 32 global DNS servers simultaneously. Free, no auth, instant results.</p>
 
+    <div class="map-wrap">
+      <svg viewBox="0 0 800 420" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="dotGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="var(--accent)" stop-opacity=".25"/>
+            <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+        <!-- graticule -->
+        <g stroke="#0f1a28" stroke-width=".5" fill="none">
+          <line x1="0" y1="105" x2="800" y2="105"/><line x1="0" y1="210" x2="800" y2="210"/>
+          <line x1="0" y1="315" x2="800" y2="315"/>
+          <line x1="200" y1="0" x2="200" y2="420"/><line x1="400" y1="0" x2="400" y2="420"/>
+          <line x1="600" y1="0" x2="600" y2="420"/>
+        </g>
+        <!-- continents (simplified) -->
+        <g fill="#0c1520" stroke="#182231" stroke-width=".8">
+          <!-- North America -->
+          <path d="M68,55 L120,42 L165,48 L185,72 L175,105 L160,125 L148,145 L128,155 L108,148 L88,135 L72,118 L58,95 Z"/>
+          <!-- Central America -->
+          <path d="M128,155 L140,165 L152,172 L148,182 L138,188 L125,185 L118,175 Z"/>
+          <!-- South America -->
+          <path d="M155,192 L178,188 L200,198 L218,222 L225,252 L218,285 L205,312 L188,335 L168,342 L148,328 L138,302 L135,272 L140,242 L145,218 Z"/>
+          <!-- Europe -->
+          <path d="M370,52 L395,48 L425,55 L448,52 L460,62 L455,82 L442,95 L422,102 L405,108 L385,112 L372,105 L362,92 L358,72 Z"/>
+          <!-- Africa -->
+          <path d="M378,128 L412,118 L442,125 L465,142 L475,172 L478,205 L472,242 L458,272 L438,298 L418,312 L398,305 L382,285 L372,258 L368,225 L365,192 L368,158 Z"/>
+          <!-- Asia -->
+          <path d="M460,42 L520,38 L575,45 L625,52 L668,65 L698,82 L712,102 L705,125 L688,142 L662,155 L635,162 L605,158 L575,148 L548,135 L522,122 L498,108 L482,92 L472,72 Z"/>
+          <!-- India -->
+          <path d="M548,135 L568,148 L578,168 L572,192 L558,208 L542,205 L532,188 L528,168 L535,152 Z"/>
+          <!-- Southeast Asia -->
+          <path d="M635,162 L658,175 L672,192 L668,208 L652,215 L635,210 L622,198 L618,182 Z"/>
+          <!-- Australia -->
+          <path d="M648,268 L698,258 L735,268 L748,292 L742,318 L718,335 L688,342 L658,332 L642,312 L640,288 Z"/>
+          <!-- Japan -->
+          <ellipse cx="708" cy="95" rx="12" ry="22" transform="rotate(15,708,95)"/>
+          <!-- UK/Ireland -->
+          <path d="M362,58 L372,52 L378,62 L372,72 L362,68 Z"/>
+          <!-- Iceland -->
+          <ellipse cx="330" cy="42" rx="10" ry="5"/>
+          <!-- Greenland -->
+          <path d="M228,18 L268,12 L292,22 L298,42 L285,58 L262,62 L238,55 L225,38 Z"/>
+          <!-- Middle East -->
+          <path d="M472,108 L505,112 L528,122 L522,138 L505,148 L482,145 L468,132 Z"/>
+          <!-- Indonesia -->
+          <path d="M628,215 L648,218 L665,222 L672,232 L658,238 L638,235 L622,228 Z"/>
+        </g>
+        <!-- server dots -->
+        <g id="dots">
+          <circle class="map-dot wait" data-ip="8.8.8.8" cx="88" cy="92" r="3"/>
+          <circle class="map-dot wait" data-ip="1.1.1.1" cx="742" cy="305" r="3"/>
+          <circle class="map-dot wait" data-ip="9.9.9.9" cx="155" cy="78" r="3"/>
+          <circle class="map-dot wait" data-ip="208.67.222.222" cx="100" cy="118" r="3"/>
+          <circle class="map-dot wait" data-ip="77.88.8.8" cx="505" cy="58" r="3"/>
+          <circle class="map-dot wait" data-ip="64.6.64.6" cx="415" cy="62" r="3"/>
+          <circle class="map-dot wait" data-ip="156.154.70.1" cx="142" cy="122" r="3"/>
+          <circle class="map-dot wait" data-ip="198.41.0.4" cx="395" cy="55" r="3"/>
+          <circle class="map-dot wait" data-ip="185.228.168.9" cx="128" cy="142" r="3"/>
+          <circle class="map-dot wait" data-ip="76.76.19.19" cx="112" cy="132" r="3"/>
+          <circle class="map-dot wait" data-ip="109.228.4.246" cx="430" cy="72" r="3"/>
+          <circle class="map-dot wait" data-ip="195.46.39.39" cx="408" cy="68" r="3"/>
+          <circle class="map-dot wait" data-ip="212.230.255.1" cx="422" cy="82" r="3"/>
+          <circle class="map-dot wait" data-ip="5.11.11.5" cx="388" cy="75" r="3"/>
+          <circle class="map-dot wait" data-ip="94.140.14.14" cx="448" cy="62" r="3"/>
+          <circle class="map-dot wait" data-ip="85.194.70.174" cx="392" cy="52" r="3"/>
+          <circle class="map-dot wait" data-ip="164.124.101.2" cx="95" cy="148" r="3"/>
+          <circle class="map-dot wait" data-ip="209.51.161.14" cx="162" cy="102" r="3"/>
+          <circle class="map-dot wait" data-ip="114.114.115.115" cx="665" cy="108" r="3"/>
+          <circle class="map-dot wait" data-ip="1.10.10.10" cx="428" cy="88" r="3"/>
+          <circle class="map-dot wait" data-ip="203.119.13.77" cx="672" cy="188" r="3"/>
+          <circle class="map-dot wait" data-ip="60.32.149.50" cx="708" cy="98" r="3"/>
+          <circle class="map-dot wait" data-ip="195.186.1.111" cx="412" cy="55" r="3"/>
+          <circle class="map-dot wait" data-ip="195.243.214.4" cx="512" cy="52" r="3"/>
+          <circle class="map-dot wait" data-ip="139.130.4.4" cx="112" cy="72" r="3"/>
+          <circle class="map-dot wait" data-ip="31.7.37.37" cx="398" cy="62" r="3"/>
+          <circle class="map-dot wait" data-ip="87.213.100.113" cx="390" cy="82" r="3"/>
+          <circle class="map-dot wait" data-ip="203.78.194.179" cx="688" cy="105" r="3"/>
+          <circle class="map-dot wait" data-ip="203.188.242.211" cx="718" cy="112" r="3"/>
+          <circle class="map-dot wait" data-ip="91.121.62.94" cx="398" cy="88" r="3"/>
+          <circle class="map-dot wait" data-ip="148.235.82.66" cx="125" cy="108" r="3"/>
+          <circle class="map-dot wait" data-ip="216.21.129.22" cx="148" cy="92" r="3"/>
+        </g>
+        <!-- region labels -->
+        <g fill="var(--muted)" font-family="var(--mono)" font-size="9" opacity=".5">
+          <text x="90" y="165">Americas</text>
+          <text x="385" y="42">Europe</text>
+          <text x="485" y="165">Africa</text>
+          <text x="560" y="42">Asia</text>
+          <text x="660" y="260">Oceania</text>
+        </g>
+      </svg>
+      <div class="map-legend">
+        <span><span class="dot wait"></span> Pending</span>
+        <span><span class="dot ok"></span> Resolved</span>
+        <span><span class="dot err"></span> Failed</span>
+      </div>
+    </div>
+
     <div class="form">
       <div class="input-wrap">
         <input id="domain" type="text" autocomplete="off" spellcheck="false" maxlength="253" placeholder="example.com" autofocus>
@@ -109,11 +222,6 @@ footer{margin-top:80px;padding:24px 0;text-align:center;font-size:13px;color:var
     </div>
 
     <div class="results" id="out"></div>
-
-    <div class="legend">
-      <span><span class="dot ok"></span> Resolved</span>
-      <span><span class="dot err"></span> Failed / timeout</span>
-    </div>
   </div>
 </div>
 
@@ -125,32 +233,68 @@ footer{margin-top:80px;padding:24px 0;text-align:center;font-size:13px;color:var
 </footer>
 
 <script>
-const S=["8.8.8.8","1.1.1.1","9.9.9.9","208.67.222.222","77.88.8.8","64.6.64.6","156.154.70.1","198.41.0.4","185.228.168.9","76.76.19.19","109.228.4.246","195.46.39.39","212.230.255.1","5.11.11.5","94.140.14.14","85.194.70.174","164.124.101.2","209.51.161.14","114.114.115.115","1.10.10.10","203.119.13.77","60.32.149.50","195.186.1.111","195.243.214.4","139.130.4.4","31.7.37.37","87.213.100.113","203.78.194.179","203.188.242.211","91.121.62.94","148.235.82.66","216.21.129.22"];
+const S=[
+  {ip:"8.8.8.8",l:"Google",r:"US"},
+  {ip:"1.1.1.1",l:"Cloudflare",r:"AU"},
+  {ip:"9.9.9.9",l:"Quad9",r:"US"},
+  {ip:"208.67.222.222",l:"OpenDNS",r:"US"},
+  {ip:"77.88.8.8",l:"Yandex",r:"RU"},
+  {ip:"64.6.64.6",l:"DNSWatch",r:"DE"},
+  {ip:"156.154.70.1",l:"Neustar",r:"US"},
+  {ip:"198.41.0.4",l:"IBM Quad9",r:"NL"},
+  {ip:"185.228.168.9",l:"CleanBrowsing",r:"US"},
+  {ip:"76.76.19.19",l:"Alternate DNS",r:"US"},
+  {ip:"109.228.4.246",l:"DNSLink",r:"DE"},
+  {ip:"195.46.39.39",l:"Infoblox",r:"NL"},
+  {ip:"212.230.255.1",l:"Telia",r:"NL"},
+  {ip:"5.11.11.5",l:"DNS for Family",r:"NL"},
+  {ip:"94.140.14.14",l:"AdGuard",r:"CZ"},
+  {ip:"85.194.70.174",l:"Freenom",r:"NL"},
+  {ip:"164.124.101.2",l:"PCH",r:"US"},
+  {ip:"209.51.161.14",l:"HE DNS",r:"US"},
+  {ip:"114.114.115.115",l:"114DNS",r:"CN"},
+  {ip:"1.10.10.10",l:"SafeDNS",r:"DE"},
+  {ip:"203.119.13.77",l:"Athena",r:"SG"},
+  {ip:"60.32.149.50",l:"IIJ",r:"JP"},
+  {ip:"195.186.1.111",l:"vDNS",r:"DE"},
+  {ip:"195.243.214.4",l:"DNS.Content",r:"RU"},
+  {ip:"139.130.4.4",l:"SaskTel",r:"CA"},
+  {ip:"31.7.37.37",l:"TTNet",r:"NL"},
+  {ip:"87.213.100.113",l:"OVH DNS",r:"FR"},
+  {ip:"203.78.194.179",l:"SK Broadband",r:"KR"},
+  {ip:"203.188.242.211",l:"KDDI",r:"JP"},
+  {ip:"91.121.62.94",l:"Online.net",r:"FR"},
+  {ip:"148.235.82.66",l:"Rackspace",r:"US"},
+  {ip:"216.21.129.22",l:"Dyn",r:"US"}
+];
 
 const domain=document.getElementById('domain');
 const rtype=document.getElementById('rtype');
 const go=document.getElementById('go');
 const out=document.getElementById('out');
+const dots=document.querySelectorAll('.map-dot');
 
 async function check(){
   const d=domain.value.trim().toLowerCase().replace(/^https?:\/\//,'').split('/')[0];
-  if(!d){out.innerHTML='';return;}
+  if(!d)return;
   go.disabled=true;
   out.innerHTML='<span class="summary">Querying 32 servers…</span>';
+  dots.forEach(dot=>{dot.className='map-dot wait';});
   const t0=performance.now();
-  const results=await Promise.allSettled(S.map(ip=>
+  const results=await Promise.allSettled(S.map(s=>
     fetch('https://dnsrobot.net/api/dns-query',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({domain:d,recordType:rtype.value,dnsServer:ip,timeout:5000})
-    }).then(r=>r.json()).then(j=>({...j,ip})).catch(()=>({status:'error',ip}))
+      body:JSON.stringify({domain:d,recordType:rtype.value,dnsServer:s.ip,timeout:5000})
+    }).then(r=>r.json()).then(j=>({...j,ip:s.ip,label:s.l,region:s.r})).catch(()=>({status:'error',ip:s.ip,label:s.l,region:s.r}))
   ));
   const elapsed=Math.round(performance.now()-t0);
   let ok=0;
-  const html=results.map(r=>{
-    const j=r.status==='fulfilled'?r.value:{status:'error',ip:'?'};
+  const html=results.map((r,i)=>{
+    const j=r.status==='fulfilled'?r.value:{status:'error',ip:S[i].ip,label:S[i].label,region:S[i].region};
     const s=j.status==='success';
     if(s)ok++;
+    dots[i].className='map-dot '+(s?'ok':'err');
     const ips=Array.isArray(j.resolvedIPs)?j.resolvedIPs.join(', '):(j.resolvedData||'');
     return '<div class="row"><span class="dot '+(s?'ok':'err')+'"></span><span class="srv">'+j.ip+'</span><span class="ips">'+(s?ips:'&mdash;')+'</span><span class="ms">'+(s?j.responseTime+'ms':'timeout')+'</span></div>';
   }).join('');
