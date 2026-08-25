@@ -256,42 +256,53 @@ function buildGrid(items){
     }).join('')+'</div>';
 }
 
+function renderResults(done,total){
+  const ok=done.filter(d=>d.ok).length;
+  const pct=Math.round(ok/total*100);
+  const sorted=done.sort((a,b)=>(a.ms||9999)-(b.ms||9999));
+  const cards=sorted.map(j=>{
+    const cls=j.ms?(j.ms<100?'fast':j.ms>500?'slow':''):'';
+    const flag=FLAG[j.country]||'';
+    return '<div class="srv-card '+(j.ok?'ok':'err')+'"><span class="dot '+(j.ok?'ok':'err')+'"></span>'
+      +'<div class="info"><span class="name">'+flag+' '+j.label+'</span><span class="region">'+j.city+', '+j.country+' · '+j.ip+'</span></div>'
+      +'<div class="result"><span class="ips">'+j.ips+'</span>'
+      +(j.ms?'<span class="ms '+cls+'">'+j.ms+'ms</span>':'<span class="ms">timeout</span>')+'</div></div>';
+  }).join('');
+  out.innerHTML=
+    '<div class="results-header"><h2>Results</h2><span style="font-family:var(--mono);font-size:13px;color:var(--muted)">'+ok+'/'+total+'</span></div>'
+    +'<div class="results-grid">'+cards+'</div>'
+    +'<div class="summary-bar"><span class="count"><span class="ok">'+ok+'</span> ok · <span class="err">'+(total-ok)+'</span> failed</span>'
+    +'<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%"></div></div>'
+    +'<span class="elapsed">'+done.length+'/'+total+'</span></div>';
+}
+
 async function check(){
   const d=domain.value.trim().toLowerCase().replace(/^https?:\/\//,'').split('/')[0];
   if(!d)return;
   go.disabled=true;
   resetDots();
-  out.innerHTML=buildGrid(S);
+  out.innerHTML='<div class="results-header"><h2>Results</h2><span style="font-family:var(--mono);font-size:13px;color:var(--muted)">0/'+S.length+'</span></div><div class="results-grid"></div>';
   const t0=performance.now();
-  const results=await Promise.allSettled(S.map(s=>
+  const done=[];
+  await Promise.allSettled(S.map(s=>
     fetch('https://dnsrobot.net/api/dns-query',{
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({domain:d,recordType:rtype.value,dnsServer:s.ip,timeout:5000})
-    }).then(r=>r.json()).then(j=>({...j,ip:s.ip,label:s.label,country:s.country,city:s.city}))
-      .catch(()=>({status:'error',ip:s.ip,label:s.label,country:s.country,city:s.city}))
+    }).then(r=>r.json()).then(j=>{
+      const success=j.status==='success';
+      const ips=Array.isArray(j.resolvedIPs)?j.resolvedIPs.join(', '):(j.resolvedData||'—');
+      done.push({ok:success,ip:s.ip,label:s.label,country:s.country,city:s.city,ips:ips,ms:j.responseTime||null});
+      setDot(s.ip,success?"success":"error");
+      renderResults(done,S.length);
+    }).catch(()=>{
+      done.push({ok:false,ip:s.ip,label:s.label,country:s.country,city:s.city,ips:'—',ms:null});
+      setDot(s.ip,"error");
+      renderResults(done,S.length);
+    })
   ));
   const elapsed=Math.round(performance.now()-t0);
-  let ok=0;
-  const cards=results.map((r,i)=>{
-    const j=r.status==='fulfilled'?r.value:{status:'error',ip:S[i].ip,label:S[i].label,country:S[i].country,city:S[i].city};
-    const s=j.status==='success';
-    if(s)ok++;
-    setDot(j.ip,s?"success":"error");
-    const ips=Array.isArray(j.resolvedIPs)?j.resolvedIPs.join(', '):(j.resolvedData||'—');
-    const ms=j.responseTime||null;
-    const cls=ms?(ms<100?'fast':ms>500?'slow':''):'';
-    const flag=FLAG[j.country]||'';
-    return '<div class="srv-card '+(s?'ok':'err')+'"><span class="dot '+(s?'ok':'err')+'"></span>'
-      +'<div class="info"><span class="name">'+flag+' '+j.label+'</span><span class="region">'+j.city+', '+j.country+' · '+j.ip+'</span></div>'
-      +'<div class="result"><span class="ips">'+ips+'</span>'+(ms?'<span class="ms '+cls+'">'+ms+'ms</span>':'<span class="ms">timeout</span>')+'</div></div>';
-  }).join('');
-  const pct=Math.round(ok/S.length*100);
-  out.innerHTML=
-    '<div class="results-header"><h2>Results</h2><span style="font-family:var(--mono);font-size:13px;color:var(--muted)">'+ok+'/'+S.length+'</span></div>'
-    +'<div class="results-grid">'+cards+'</div>'
-    +'<div class="summary-bar"><span class="count"><span class="ok">'+ok+'</span> ok · <span class="err">'+(S.length-ok)+'</span> failed</span>'
-    +'<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%"></div></div>'
-    +'<span class="elapsed">'+elapsed+'ms</span></div>';
+  renderResults(done,S.length);
+  out.querySelector('.elapsed').textContent=elapsed+'ms total';
   go.disabled=false;
 }
 
