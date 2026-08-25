@@ -2,8 +2,8 @@
 """Integration Tests - Test the complete registration flow."""
 
 import json
-import sys
 import shutil
+import sys
 from pathlib import Path
 
 # Add scripts directory to path

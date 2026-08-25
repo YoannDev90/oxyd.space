@@ -104,7 +104,6 @@ class MockDNSHandler(http.server.BaseHTTPRequestHandler):
 
     def log_message(self, format, *args):
         """Suppress default logging."""
-        pass
 
 
 class MockDNSDaemon:
