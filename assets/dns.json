@@ -1,0 +1,290 @@
+[
+  {
+    "ip": "8.8.8.8",
+    "label": "Google DNS",
+    "provider": "Google",
+    "country": "US",
+    "city": "Mountain View",
+    "lat": 37.4056,
+    "lng": -122.0775
+  },
+  {
+    "ip": "1.1.1.1",
+    "label": "Cloudflare",
+    "provider": "Cloudflare",
+    "country": "AU",
+    "city": "Sydney",
+    "lat": -33.8688,
+    "lng": 151.2093
+  },
+  {
+    "ip": "9.9.9.9",
+    "label": "Quad9",
+    "provider": "Quad9",
+    "country": "DE",
+    "city": "Frankfurt",
+    "lat": 50.1109,
+    "lng": 8.6821
+  },
+  {
+    "ip": "208.67.222.222",
+    "label": "OpenDNS",
+    "provider": "Cisco OpenDNS",
+    "country": "US",
+    "city": "San Francisco",
+    "lat": 37.7749,
+    "lng": -122.4194
+  },
+  {
+    "ip": "77.88.8.8",
+    "label": "Yandex DNS",
+    "provider": "Yandex",
+    "country": "RU",
+    "city": "Moscow",
+    "lat": 55.7558,
+    "lng": 37.6173
+  },
+  {
+    "ip": "64.6.64.6",
+    "label": "DNSWATCH",
+    "provider": "DNSWATCH",
+    "country": "DE",
+    "city": "Frankfurt",
+    "lat": 50.1109,
+    "lng": 8.6821
+  },
+  {
+    "ip": "156.154.70.1",
+    "label": "Neustar",
+    "provider": "Neustar (UltraDNS)",
+    "country": "US",
+    "city": "Washington DC",
+    "lat": 38.9072,
+    "lng": -77.0369
+  },
+  {
+    "ip": "198.41.0.4",
+    "label": "Quad9 EU",
+    "provider": "Quad9",
+    "country": "NL",
+    "city": "Amsterdam",
+    "lat": 52.3676,
+    "lng": 4.9041
+  },
+  {
+    "ip": "185.228.168.9",
+    "label": "CleanBrowsing",
+    "provider": "CleanBrowsing",
+    "country": "US",
+    "city": "Charlotte",
+    "lat": 35.2271,
+    "lng": -80.8431
+  },
+  {
+    "ip": "76.76.19.19",
+    "label": "Alternate DNS",
+    "provider": "Alternate DNS",
+    "country": "US",
+    "city": "New York",
+    "lat": 40.7128,
+    "lng": -74.006
+  },
+  {
+    "ip": "109.228.4.246",
+    "label": "DNSLink",
+    "provider": "DNSLink",
+    "country": "DE",
+    "city": "Munich",
+    "lat": 48.1351,
+    "lng": 11.582
+  },
+  {
+    "ip": "195.46.39.39",
+    "label": "Infoblox",
+    "provider": "Infoblox",
+    "country": "NL",
+    "city": "Amsterdam",
+    "lat": 52.3676,
+    "lng": 4.9041
+  },
+  {
+    "ip": "212.230.255.1",
+    "label": "Telia",
+    "provider": "Telia Carrier",
+    "country": "NL",
+    "city": "Utrecht",
+    "lat": 52.0907,
+    "lng": 5.1214
+  },
+  {
+    "ip": "5.11.11.5",
+    "label": "DNS for Family",
+    "provider": "DNS for Family",
+    "country": "NL",
+    "city": "Rotterdam",
+    "lat": 51.9244,
+    "lng": 4.4777
+  },
+  {
+    "ip": "94.140.14.14",
+    "label": "AdGuard DNS",
+    "provider": "AdGuard",
+    "country": "CZ",
+    "city": "Prague",
+    "lat": 50.0755,
+    "lng": 14.4378
+  },
+  {
+    "ip": "85.194.70.174",
+    "label": "Freenom World",
+    "provider": "Freenom",
+    "country": "NL",
+    "city": "Amsterdam",
+    "lat": 52.3676,
+    "lng": 4.9041
+  },
+  {
+    "ip": "164.124.101.2",
+    "label": "PCH",
+    "provider": "Packet Clearing House",
+    "country": "US",
+    "city": "San Francisco",
+    "lat": 37.7749,
+    "lng": -122.4194
+  },
+  {
+    "ip": "209.51.161.14",
+    "label": "Hurricane Electric",
+    "provider": "Hurricane Electric",
+    "country": "US",
+    "city": "Fremont",
+    "lat": 37.5485,
+    "lng": -121.9886
+  },
+  {
+    "ip": "114.114.115.115",
+    "label": "114DNS",
+    "provider": "114DNS",
+    "country": "CN",
+    "city": "Nanjing",
+    "lat": 32.0603,
+    "lng": 118.7969
+  },
+  {
+    "ip": "1.10.10.10",
+    "label": "SafeDNS",
+    "provider": "SafeDNS",
+    "country": "DE",
+    "city": "Frankfurt",
+    "lat": 50.1109,
+    "lng": 8.6821
+  },
+  {
+    "ip": "203.119.13.77",
+    "label": "Athena DNS",
+    "provider": "Athena",
+    "country": "SG",
+    "city": "Singapore",
+    "lat": 1.3521,
+    "lng": 103.8198
+  },
+  {
+    "ip": "60.32.149.50",
+    "label": "IIJ DNS",
+    "provider": "IIJ",
+    "country": "JP",
+    "city": "Tokyo",
+    "lat": 35.6762,
+    "lng": 139.6503
+  },
+  {
+    "ip": "195.186.1.111",
+    "label": "vDNS",
+    "provider": "vDNS",
+    "country": "DE",
+    "city": "Frankfurt",
+    "lat": 50.1109,
+    "lng": 8.6821
+  },
+  {
+    "ip": "195.243.214.4",
+    "label": "DNS Content",
+    "provider": "DNS Content",
+    "country": "RU",
+    "city": "St Petersburg",
+    "lat": 59.9343,
+    "lng": 30.3351
+  },
+  {
+    "ip": "139.130.4.4",
+    "label": "SaskTel",
+    "provider": "SaskTel",
+    "country": "CA",
+    "city": "Saskatoon",
+    "lat": 52.1332,
+    "lng": -106.67
+  },
+  {
+    "ip": "31.7.37.37",
+    "label": "TTNet DNS",
+    "provider": "TTNet",
+    "country": "NL",
+    "city": "Amsterdam",
+    "lat": 52.3676,
+    "lng": 4.9041
+  },
+  {
+    "ip": "87.213.100.113",
+    "label": "OVH DNS",
+    "provider": "OVH",
+    "country": "FR",
+    "city": "Paris",
+    "lat": 48.8566,
+    "lng": 2.3522
+  },
+  {
+    "ip": "203.78.194.179",
+    "label": "SK Broadband",
+    "provider": "SK Broadband",
+    "country": "KR",
+    "city": "Seoul",
+    "lat": 37.5665,
+    "lng": 126.978
+  },
+  {
+    "ip": "203.188.242.211",
+    "label": "KDDI DNS",
+    "provider": "KDDI",
+    "country": "JP",
+    "city": "Tokyo",
+    "lat": 35.6762,
+    "lng": 139.6503
+  },
+  {
+    "ip": "91.121.62.94",
+    "label": "Online.net",
+    "provider": "Online.net (Scaleway)",
+    "country": "FR",
+    "city": "Paris",
+    "lat": 48.8566,
+    "lng": 2.3522
+  },
+  {
+    "ip": "148.235.82.66",
+    "label": "Rackspace",
+    "provider": "Rackspace",
+    "country": "US",
+    "city": "San Antonio",
+    "lat": 29.4241,
+    "lng": -98.4936
+  },
+  {
+    "ip": "216.21.129.22",
+    "label": "Dyn",
+    "provider": "Dyn (Oracle)",
+    "country": "US",
+    "city": "Manchester NH",
+    "lat": 42.9956,
+    "lng": -71.4548
+  }
+]

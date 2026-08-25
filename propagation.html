@@ -185,41 +185,6 @@ footer{margin-top:60px;padding:24px 0;text-align:center;font-size:13px;color:var
 <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <script>
-const S=[
-  {ip:"8.8.8.8",label:"Google DNS",r:"US",city:"Mountain View",lat:37.4056,lng:-122.0775},
-  {ip:"1.1.1.1",label:"Cloudflare",r:"AU",city:"Sydney",lat:-33.8688,lng:151.2093},
-  {ip:"9.9.9.9",label:"Quad9",r:"DE",city:"Frankfurt",lat:50.1109,lng:8.6821},
-  {ip:"208.67.222.222",label:"OpenDNS",r:"US",city:"San Francisco",lat:37.7749,lng:-122.4194},
-  {ip:"77.88.8.8",label:"Yandex DNS",r:"RU",city:"Moscow",lat:55.7558,lng:37.6173},
-  {ip:"64.6.64.6",label:"DNSWATCH",r:"DE",city:"Frankfurt",lat:50.1109,lng:8.6821},
-  {ip:"156.154.70.1",label:"Neustar",r:"US",city:"Washington DC",lat:38.9072,lng:-77.0369},
-  {ip:"198.41.0.4",label:"Quad9 EU",r:"NL",city:"Amsterdam",lat:52.3676,lng:4.9041},
-  {ip:"185.228.168.9",label:"CleanBrowsing",r:"US",city:"Charlotte",lat:35.2271,lng:-80.8431},
-  {ip:"76.76.19.19",label:"Alternate DNS",r:"US",city:"New York",lat:40.7128,lng:-74.006},
-  {ip:"109.228.4.246",label:"DNSLink",r:"DE",city:"Munich",lat:48.1351,lng:11.582},
-  {ip:"195.46.39.39",label:"Infoblox",r:"NL",city:"Amsterdam",lat:52.3676,lng:4.9041},
-  {ip:"212.230.255.1",label:"Telia",r:"NL",city:"Utrecht",lat:52.0907,lng:5.1214},
-  {ip:"5.11.11.5",label:"DNS for Family",r:"NL",city:"Rotterdam",lat:51.9244,lng:4.4777},
-  {ip:"94.140.14.14",label:"AdGuard DNS",r:"CZ",city:"Prague",lat:50.0755,lng:14.4378},
-  {ip:"85.194.70.174",label:"Freenom World",r:"NL",city:"Amsterdam",lat:52.3676,lng:4.9041},
-  {ip:"164.124.101.2",label:"PCH",r:"US",city:"San Francisco",lat:37.7749,lng:-122.4194},
-  {ip:"209.51.161.14",label:"Hurricane Electric",r:"US",city:"Fremont",lat:37.5485,lng:-121.9886},
-  {ip:"114.114.115.115",label:"114DNS",r:"CN",city:"Nanjing",lat:32.0603,lng:118.7969},
-  {ip:"1.10.10.10",label:"SafeDNS",r:"DE",city:"Frankfurt",lat:50.1109,lng:8.6821},
-  {ip:"203.119.13.77",label:"Athena DNS",r:"SG",city:"Singapore",lat:1.3521,lng:103.8198},
-  {ip:"60.32.149.50",label:"IIJ DNS",r:"JP",city:"Tokyo",lat:35.6762,lng:139.6503},
-  {ip:"195.186.1.111",label:"vDNS",r:"DE",city:"Frankfurt",lat:50.1109,lng:8.6821},
-  {ip:"195.243.214.4",label:"DNS Content",r:"RU",city:"St Petersburg",lat:59.9343,lng:30.3351},
-  {ip:"139.130.4.4",label:"SaskTel",r:"CA",city:"Saskatoon",lat:52.1332,lng:-106.67},
-  {ip:"31.7.37.37",label:"TTNet DNS",r:"NL",city:"Amsterdam",lat:52.3676,lng:4.9041},
-  {ip:"87.213.100.113",label:"OVH DNS",r:"FR",city:"Paris",lat:48.8566,lng:2.3522},
-  {ip:"203.78.194.179",label:"SK Broadband",r:"KR",city:"Seoul",lat:37.5665,lng:126.978},
-  {ip:"203.188.242.211",label:"KDDI DNS",r:"JP",city:"Tokyo",lat:35.6762,lng:139.6503},
-  {ip:"91.121.62.94",label:"Online.net",r:"FR",city:"Paris",lat:48.8566,lng:2.3522},
-  {ip:"148.235.82.66",label:"Rackspace",r:"US",city:"San Antonio",lat:29.4241,lng:-98.4936},
-  {ip:"216.21.129.22",label:"Dyn",r:"US",city:"Manchester NH",lat:42.9956,lng:-71.4548}
-];
-
 const FLAG={US:"🇺🇸",AU:"🇦🇺",DE:"🇩🇪",RU:"🇷🇺",NL:"🇳🇱",CZ:"🇨🇿",CN:"🇨🇳",SG:"🇸🇬",JP:"🇯🇵",CA:"🇨🇦",FR:"🇫🇷",KR:"🇰🇷"};
 
 const svg=d3.select("#map");
@@ -227,7 +192,13 @@ const W=960,H=500;
 const proj=d3.geoNaturalEarth1().scale(153).translate([W/2,H/2]);
 const path=d3.geoPath(proj);
 
-// zoom
+const defs=svg.append("defs");
+const glow=defs.append("filter").attr("id","glow").attr("x","-50%").attr("y","-50%").attr("width","200%").attr("height","200%");
+glow.append("feGaussianBlur").attr("stdDeviation","2.5").attr("result","blur");
+glow.append("feMerge").selectAll("feMergeNode").data(["blur","SourceGraphic"]).join("feMergeNode").attr("in",d=>d);
+
+const gMain=svg.append("g");
+
 const zoom=d3.zoom()
   .scaleExtent([1,12])
   .on("zoom",e=>{
@@ -237,128 +208,109 @@ const zoom=d3.zoom()
   });
 svg.call(zoom);
 
-// defs
-const defs=svg.append("defs");
-const glow=defs.append("filter").attr("id","glow").attr("x","-50%").attr("y","-50%").attr("width","200%").attr("height","200%");
-glow.append("feGaussianBlur").attr("stdDeviation","2.5").attr("result","blur");
-glow.append("feMerge").selectAll("feMergeNode").data(["blur","SourceGraphic"]).join("feMergeNode").attr("in",d=>d);
-
-const gMain=svg.append("g");
-
-// sphere
+// sphere + graticule first
 gMain.append("path").datum({type:"Sphere"}).attr("class","sphere").attr("d",path);
-
-// graticule
 gMain.append("path").datum(d3.geoGraticule().step([30,30])()).attr("class","graticule").attr("d",path);
 
-// countries
-d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(world=>{
-  gMain.append("g")
-    .selectAll("path").data(topojson.feature(world,world.objects.countries).features).join("path")
-    .attr("class","land").attr("d",path);
-  gMain.append("path")
-    .datum(topojson.mesh(world,world.objects.countries,(a,b)=>a!==b))
-    .attr("class","border").attr("d",path);
-});
-
-// dots
-const dotsG=gMain.append("g");
-const dotData=dotsG.selectAll("g").data(S).join("g").attr("transform",d=>{
-  const p=proj([d.lng,d.lat]);
-  return "translate("+p[0]+","+p[1]+")";
-});
-
-dotData.append("circle")
-  .attr("class","srv-dot")
-  .attr("r",3.2)
-  .attr("fill","#2a3a50")
-  .attr("opacity",.5)
-  .attr("filter","url(#glow)");
-
-dotData.append("text")
-  .attr("class","dot-label")
-  .attr("x",0).attr("y",-8)
-  .attr("text-anchor","middle")
-  .text(d=>d.label);
-
-const dotCircles=dotsG.selectAll(".srv-dot");
+let S=[];
+let dotCircles;
 
 function setDot(ip,status){
-  const s=S.findIndex(s=>s.ip===ip);
-  if(s<0)return;
-  const c=d3.select(dotCircles.nodes()[s]);
+  const i=S.findIndex(s=>s.ip===ip);
+  if(i<0)return;
+  const c=d3.select(dotCircles.nodes()[i]);
   if(status==="success") c.attr("fill","#34d399").attr("opacity",1);
   else if(status==="pending") c.attr("fill","#2a3a50").attr("opacity",.5);
   else c.attr("fill","#f87171").attr("opacity",1);
 }
+function resetDots(){ dotCircles.attr("fill","#2a3a50").attr("opacity",.5); }
 
-function resetDots(){
-  dotCircles.attr("fill","#2a3a50").attr("opacity",.5);
+function drawDots(data){
+  S=data;
+  const dotsG=gMain.append("g");
+  const dotData=dotsG.selectAll("g").data(S).join("g").attr("transform",d=>{
+    const p=proj([d.lng,d.lat]);
+    return "translate("+p[0]+","+p[1]+")";
+  });
+  dotData.append("circle")
+    .attr("class","srv-dot").attr("r",3.2)
+    .attr("fill","#2a3a50").attr("opacity",.5).attr("filter","url(#glow)");
+  dotData.append("text")
+    .attr("class","dot-label").attr("x",0).attr("y",-8).attr("text-anchor","middle")
+    .text(d=>d.label);
+  dotCircles=dotsG.selectAll(".srv-dot");
 }
 
-// check
 const domain=document.getElementById('domain');
 const rtype=document.getElementById('rtype');
 const go=document.getElementById('go');
 const out=document.getElementById('resultsArea');
+
+function buildGrid(items){
+  return '<div class="results-header"><h2>Results</h2></div><div class="results-grid">'
+    +items.map(j=>{
+      const flag=FLAG[j.country]||'';
+      return '<div class="srv-card"><span class="dot wait"></span>'
+        +'<div class="info"><span class="name">'+flag+' '+j.label+'</span><span class="region">'+j.city+', '+j.country+' · '+j.ip+'</span></div>'
+        +'<div class="result"><span class="ips">—</span><span class="ms"></span></div></div>';
+    }).join('')+'</div>';
+}
 
 async function check(){
   const d=domain.value.trim().toLowerCase().replace(/^https?:\/\//,'').split('/')[0];
   if(!d)return;
   go.disabled=true;
   resetDots();
-  out.innerHTML=buildGrid(S.map(s=>({...s,status:"pending",ips:"",ms:null})));
+  out.innerHTML=buildGrid(S);
   const t0=performance.now();
   const results=await Promise.allSettled(S.map(s=>
     fetch('https://dnsrobot.net/api/dns-query',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
+      method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({domain:d,recordType:rtype.value,dnsServer:s.ip,timeout:5000})
-    }).then(r=>r.json()).then(j=>({...j,ip:s.ip,label:s.label,region:s.r,city:s.city})).catch(()=>({status:'error',ip:s.ip,label:s.label,region:s.r,city:s.city}))
+    }).then(r=>r.json()).then(j=>({...j,ip:s.ip,label:s.label,country:s.country,city:s.city}))
+      .catch(()=>({status:'error',ip:s.ip,label:s.label,country:s.country,city:s.city}))
   ));
   const elapsed=Math.round(performance.now()-t0);
   let ok=0;
   const cards=results.map((r,i)=>{
-    const j=r.status==='fulfilled'?r.value:{status:'error',ip:S[i].ip,label:S[i].label,region:S[i].r,city:S[i].city};
-    const success=j.status==='success';
-    if(success)ok++;
-    setDot(j.ip,success?"success":"error");
+    const j=r.status==='fulfilled'?r.value:{status:'error',ip:S[i].ip,label:S[i].label,country:S[i].country,city:S[i].city};
+    const s=j.status==='success';
+    if(s)ok++;
+    setDot(j.ip,s?"success":"error");
     const ips=Array.isArray(j.resolvedIPs)?j.resolvedIPs.join(', '):(j.resolvedData||'—');
     const ms=j.responseTime||null;
-    const msClass=ms?(ms<100?'fast':ms>500?'slow':''):'';
-    const flag=FLAG[j.region]||'';
-    return '<div class="srv-card '+(success?'ok':'err')+'">'
-      +'<span class="dot '+(success?'ok':'err')+'"></span>'
-      +'<div class="info"><span class="name">'+flag+' '+j.label+'</span><span class="region">'+j.city+', '+j.region+' · '+j.ip+'</span></div>'
-      +'<div class="result"><span class="ips">'+ips+'</span>'+(ms?'<span class="ms '+msClass+'">'+ms+'ms</span>':'<span class="ms">timeout</span>')+'</div>'
-      +'</div>';
+    const cls=ms?(ms<100?'fast':ms>500?'slow':''):'';
+    const flag=FLAG[j.country]||'';
+    return '<div class="srv-card '+(s?'ok':'err')+'"><span class="dot '+(s?'ok':'err')+'"></span>'
+      +'<div class="info"><span class="name">'+flag+' '+j.label+'</span><span class="region">'+j.city+', '+j.country+' · '+j.ip+'</span></div>'
+      +'<div class="result"><span class="ips">'+ips+'</span>'+(ms?'<span class="ms '+cls+'">'+ms+'ms</span>':'<span class="ms">timeout</span>')+'</div></div>';
   }).join('');
   const pct=Math.round(ok/S.length*100);
   out.innerHTML=
     '<div class="results-header"><h2>Results</h2><span style="font-family:var(--mono);font-size:13px;color:var(--muted)">'+ok+'/'+S.length+'</span></div>'
     +'<div class="results-grid">'+cards+'</div>'
-    +'<div class="summary-bar">'
-      +'<span class="count"><span class="ok">'+ok+'</span> ok · <span class="err">'+(S.length-ok)+'</span> failed</span>'
-      +'<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%"></div></div>'
-      +'<span class="elapsed">'+elapsed+'ms</span>'
-    +'</div>';
+    +'<div class="summary-bar"><span class="count"><span class="ok">'+ok+'</span> ok · <span class="err">'+(S.length-ok)+'</span> failed</span>'
+    +'<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%"></div></div>'
+    +'<span class="elapsed">'+elapsed+'ms</span></div>';
   go.disabled=false;
-}
-
-function buildGrid(items){
-  const cards=items.map(j=>{
-    const flag=FLAG[j.region]||'';
-    return '<div class="srv-card">'
-      +'<span class="dot wait"></span>'
-      +'<div class="info"><span class="name">'+flag+' '+j.label+'</span><span class="region">'+j.city+', '+j.region+' · '+j.ip+'</span></div>'
-      +'<div class="result"><span class="ips">—</span><span class="ms"></span></div>'
-      +'</div>';
-  }).join('');
-  return '<div class="results-header"><h2>Results</h2></div><div class="results-grid">'+cards+'</div>';
 }
 
 go.addEventListener('click',check);
 domain.addEventListener('keydown',e=>{if(e.key==='Enter')check()});
+
+// load both sources, then draw
+Promise.all([
+  fetch('assets/dns.json').then(r=>r.json()),
+  d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+]).then(([servers,world])=>{
+  gMain.append("g")
+    .selectAll("path").data(topojson.feature(world,world.objects.countries).features).join("path")
+    .attr("class","land").attr("d",path);
+  gMain.append("path")
+    .datum(topojson.mesh(world,world.objects.countries,(a,b)=>a!==b))
+    .attr("class","border").attr("d",path);
+  drawDots(servers);
+});
 </script>
 </body>
 </html>
