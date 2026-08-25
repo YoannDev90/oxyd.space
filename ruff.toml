@@ -1,0 +1,15 @@
+[lint]
+select = ["E", "F", "W", "I", "UP", "SIM", "PIE", "RUF"]
+ignore = [
+    "BLE001",   # blind except — acceptable in scripts/tools
+    "PLW1510",  # subprocess.run without check — we check returncode manually
+    "DTZ003",   # datetime.utcnow() — used for simple timestamps, not timezone-critical
+    "DTZ007",   # naive datetime from strptime — parsing SSL cert dates (always UTC)
+    "S110",     # try-except-pass — acceptable for best-effort cleanup
+    "SIM117",   # nested with — readability preference
+    "SIM102",   # nested if — readability preference
+    "SIM105",   # contextlib.suppress — readability preference
+    "EXE001",   # shebang on non-executable — files may be run with `python scripts/...`
+    "C401",     # unnecessary generator in set — cosmetic
+    "E501",     # line too long — handled by ruff-format
+]
