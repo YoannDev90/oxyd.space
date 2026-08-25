@@ -11,7 +11,7 @@
 :root{
   --bg:#05080c;--panel:#0b1118;--panel-2:#0e1520;--line:#182231;
   --text:#dbe7f3;--muted:#8296ad;--accent:#22d3ee;--accent-2:#818cf8;
-  --ok:#34d399;--bad:#f87171;
+  --ok:#34d399;--bad:#f87171;--warn:#fbbf24;
   --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
 }
 *{margin:0;padding:0;box-sizing:border-box}
@@ -37,18 +37,30 @@ h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
 
 .map-wrap{
   background:var(--panel);border:1px solid var(--line);border-radius:14px;
-  padding:16px;margin-bottom:28px;overflow:hidden;
+  padding:12px;margin-bottom:28px;overflow:hidden;position:relative;
 }
-#map{width:100%;display:block}
-#map .land{fill:#0c1520;stroke:#182231;stroke-width:.5}
-#map .border{fill:none;stroke:#1e2d40;stroke-width:.3}
-#map .graticule{fill:none;stroke:#0f1a28;stroke-width:.4}
+.map-hint{
+  position:absolute;top:18px;right:20px;z-index:5;
+  font-size:11px;color:var(--muted);opacity:.6;pointer-events:none;
+  font-family:var(--mono);background:rgba(5,8,12,.7);padding:4px 8px;border-radius:6px;
+}
+#map{width:100%;display:block;cursor:grab}
+#map:active{cursor:grabbing}
+#map .land{fill:#0c1520;stroke:#1e2d40;stroke-width:.4}
+#map .border{fill:none;stroke:#1a2838;stroke-width:.25}
+#map .graticule{fill:none;stroke:#0d1622;stroke-width:.35}
 #map .sphere{fill:none;stroke:#182231;stroke-width:.6}
-.srv-dot{transition:fill .4s, r .3s;cursor:pointer}
-.srv-dot:hover{r:5;fill:#fff!important}
-.map-legend{display:flex;gap:16px;margin-top:10px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.srv-dot{cursor:pointer;transition:r .2s}
+.srv-dot:hover{r:6!important}
+.dot-label{
+  font-family:var(--mono);font-size:9px;fill:var(--muted);
+  pointer-events:none;opacity:0;transition:opacity .2s;
+}
+.srv-dot:hover+.dot-label{opacity:1}
+
+.map-legend{display:flex;gap:16px;margin-top:10px;font-size:12px;color:var(--muted);flex-wrap:wrap;align-items:center}
 .map-legend span{display:flex;align-items:center;gap:5px}
-.map-legend .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.map-legend .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
 
 .form{display:flex;gap:10px;flex-wrap:wrap}
 .input-wrap{
@@ -76,18 +88,47 @@ select:focus{outline:none;border-color:var(--accent)}
 .btn:hover{filter:brightness(1.12)}
 .btn:disabled{filter:grayscale(.5) brightness(.75);cursor:wait}
 
-.results{margin-top:28px;display:flex;flex-direction:column;gap:8px}
-.row{
-  display:flex;align-items:center;gap:12px;
-  background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 16px;
-  font-family:var(--mono);font-size:13px;
+.results-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:32px;margin-bottom:16px;
 }
-.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.dot.ok{background:var(--ok)}.dot.err{background:var(--bad)}.dot.wait{background:var(--muted);opacity:.3}
-.srv{min-width:72px;font-weight:600}
-.ips{color:var(--muted);flex:1;word-break:break-all}
-.ms{color:var(--muted);white-space:nowrap}
-.summary{font-family:var(--mono);font-size:13px;color:var(--muted);margin-top:14px}
+.results-header h2{font-size:16px;font-weight:700;color:var(--muted)}
+.results-grid{display:flex;flex-direction:column;gap:6px}
+.srv-card{
+  display:grid;grid-template-columns:8px 1fr auto;gap:14px;align-items:center;
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:12px 16px;font-family:var(--mono);font-size:13px;
+  transition:border-color .2s,background .2s;
+}
+.srv-card:hover{border-color:#243448;background:var(--panel-2)}
+.srv-card .dot{width:8px;height:8px;border-radius:50%}
+.srv-card .dot.ok{background:var(--ok)}
+.srv-card .dot.err{background:var(--bad)}
+.srv-card .dot.wait{background:var(--muted);opacity:.35}
+.srv-card .info{display:flex;flex-direction:column;gap:2px;min-width:0}
+.srv-card .name{font-weight:600;color:var(--text);font-size:13px}
+.srv-card .region{font-size:11px;color:var(--muted)}
+.srv-card .result{display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:0}
+.srv-card .ips{color:var(--muted);font-size:12px;word-break:break-all;text-align:right;max-width:280px}
+.srv-card .ms{font-size:12px;color:var(--muted);white-space:nowrap}
+.srv-card .ms.fast{color:var(--ok)}
+.srv-card .ms.slow{color:var(--warn)}
+.srv-card.ok{border-left:2px solid var(--ok)}
+.srv-card.err{border-left:2px solid var(--bad)}
+
+.summary-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  background:var(--panel);border:1px solid var(--line);border-radius:10px;
+  padding:12px 16px;margin-top:16px;font-family:var(--mono);font-size:13px;
+}
+.summary-bar .count{color:var(--text);font-weight:600}
+.summary-bar .count .ok{color:var(--ok)}
+.summary-bar .count .err{color:var(--bad)}
+.summary-bar .elapsed{color:var(--muted)}
+.progress-bar{
+  flex:1;height:4px;background:var(--line);border-radius:2px;overflow:hidden;
+}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--ok),var(--accent));border-radius:2px;transition:width .3s}
 
 footer{margin-top:60px;padding:24px 0;text-align:center;font-size:13px;color:var(--muted);border-top:1px solid var(--line)}
 </style>
@@ -110,6 +151,7 @@ footer{margin-top:60px;padding:24px 0;text-align:center;font-size:13px;color:var
     <p class="sub">Query 32 global DNS servers simultaneously. Free, no auth, instant results.</p>
 
     <div class="map-wrap">
+      <div class="map-hint">scroll to zoom · drag to pan</div>
       <svg id="map" viewBox="0 0 960 500"></svg>
       <div class="map-legend">
         <span><span class="dot wait"></span> Pending</span>
@@ -129,7 +171,7 @@ footer{margin-top:60px;padding:24px 0;text-align:center;font-size:13px;color:var
       <button class="btn" id="go">Check</button>
     </div>
 
-    <div class="results" id="out"></div>
+    <div id="resultsArea"></div>
   </div>
 </div>
 
@@ -144,139 +186,179 @@ footer{margin-top:60px;padding:24px 0;text-align:center;font-size:13px;color:var
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <script>
 const S=[
-  {ip:"8.8.8.8",label:"Google",r:"US",lat:37.386,lng:-122.084},
-  {ip:"1.1.1.1",label:"Cloudflare",r:"AU",lat:-33.869,lng:151.209},
-  {ip:"9.9.9.9",label:"Quad9",r:"US",lat:41.262,lng:-73.205},
-  {ip:"208.67.222.222",label:"OpenDNS",r:"US",lat:37.775,lng:-122.419},
-  {ip:"77.88.8.8",label:"Yandex",r:"RU",lat:55.756,lng:37.617},
-  {ip:"64.6.64.6",label:"DNSWatch",r:"DE",lat:50.11,lng:8.682},
-  {ip:"156.154.70.1",label:"Neustar",r:"US",lat:38.907,lng:-77.037},
-  {ip:"198.41.0.4",label:"Quad9 EU",r:"NL",lat:52.37,lng:4.895},
-  {ip:"185.228.168.9",label:"CleanBrowsing",r:"US",lat:35.227,lng:-80.843},
-  {ip:"76.76.19.19",label:"Alternate DNS",r:"US",lat:40.713,lng:-74.006},
-  {ip:"109.228.4.246",label:"DNSLink",r:"DE",lat:48.137,lng:11.575},
-  {ip:"195.46.39.39",label:"Infoblox",r:"NL",lat:52.37,lng:4.895},
-  {ip:"212.230.255.1",label:"Telia",r:"NL",lat:52.09,lng:5.121},
-  {ip:"5.11.11.5",label:"DNS for Family",r:"NL",lat:52.09,lng:5.121},
-  {ip:"94.140.14.14",label:"AdGuard",r:"CZ",lat:50.088,lng:14.421},
-  {ip:"85.194.70.174",label:"Freenom",r:"NL",lat:52.37,lng:4.895},
-  {ip:"164.124.101.2",label:"PCH",r:"US",lat:37.775,lng:-122.419},
-  {ip:"209.51.161.14",label:"HE DNS",r:"US",lat:29.76,lng:-95.37},
-  {ip:"114.114.115.115",label:"114DNS",r:"CN",lat:31.23,lng:121.474},
-  {ip:"1.10.10.10",label:"SafeDNS",r:"DE",lat:50.11,lng:8.682},
-  {ip:"203.119.13.77",label:"Athena",r:"SG",lat:1.352,lng:103.82},
-  {ip:"60.32.149.50",label:"IIJ",r:"JP",lat:35.676,lng:139.65},
-  {ip:"195.186.1.111",label:"vDNS",r:"DE",lat:50.11,lng:8.682},
-  {ip:"195.243.214.4",label:"DNS.Content",r:"RU",lat:55.756,lng:37.617},
-  {ip:"139.130.4.4",label:"SaskTel",r:"CA",lat:52.133,lng:-106.67},
-  {ip:"31.7.37.37",label:"TTNet",r:"NL",lat:52.37,lng:4.895},
-  {ip:"87.213.100.113",label:"OVH DNS",r:"FR",lat:48.857,lng:2.352},
-  {ip:"203.78.194.179",label:"SK Broadband",r:"KR",lat:37.566,lng:126.978},
-  {ip:"203.188.242.211",label:"KDDI",r:"JP",lat:35.676,lng:139.65},
-  {ip:"91.121.62.94",label:"Online.net",r:"FR",lat:48.857,lng:2.352},
-  {ip:"148.235.82.66",label:"Rackspace",r:"US",lat:29.424,lng:-98.493},
-  {ip:"216.21.129.22",label:"Dyn",r:"US",lat:43.208,lng:-71.54}
+  {ip:"8.8.8.8",label:"Google DNS",r:"US",city:"Mountain View",lat:37.4056,lng:-122.0775},
+  {ip:"1.1.1.1",label:"Cloudflare",r:"AU",city:"Sydney",lat:-33.8688,lng:151.2093},
+  {ip:"9.9.9.9",label:"Quad9",r:"DE",city:"Frankfurt",lat:50.1109,lng:8.6821},
+  {ip:"208.67.222.222",label:"OpenDNS",r:"US",city:"San Francisco",lat:37.7749,lng:-122.4194},
+  {ip:"77.88.8.8",label:"Yandex DNS",r:"RU",city:"Moscow",lat:55.7558,lng:37.6173},
+  {ip:"64.6.64.6",label:"DNSWATCH",r:"DE",city:"Frankfurt",lat:50.1109,lng:8.6821},
+  {ip:"156.154.70.1",label:"Neustar",r:"US",city:"Washington DC",lat:38.9072,lng:-77.0369},
+  {ip:"198.41.0.4",label:"Quad9 EU",r:"NL",city:"Amsterdam",lat:52.3676,lng:4.9041},
+  {ip:"185.228.168.9",label:"CleanBrowsing",r:"US",city:"Charlotte",lat:35.2271,lng:-80.8431},
+  {ip:"76.76.19.19",label:"Alternate DNS",r:"US",city:"New York",lat:40.7128,lng:-74.006},
+  {ip:"109.228.4.246",label:"DNSLink",r:"DE",city:"Munich",lat:48.1351,lng:11.582},
+  {ip:"195.46.39.39",label:"Infoblox",r:"NL",city:"Amsterdam",lat:52.3676,lng:4.9041},
+  {ip:"212.230.255.1",label:"Telia",r:"NL",city:"Utrecht",lat:52.0907,lng:5.1214},
+  {ip:"5.11.11.5",label:"DNS for Family",r:"NL",city:"Rotterdam",lat:51.9244,lng:4.4777},
+  {ip:"94.140.14.14",label:"AdGuard DNS",r:"CZ",city:"Prague",lat:50.0755,lng:14.4378},
+  {ip:"85.194.70.174",label:"Freenom World",r:"NL",city:"Amsterdam",lat:52.3676,lng:4.9041},
+  {ip:"164.124.101.2",label:"PCH",r:"US",city:"San Francisco",lat:37.7749,lng:-122.4194},
+  {ip:"209.51.161.14",label:"Hurricane Electric",r:"US",city:"Fremont",lat:37.5485,lng:-121.9886},
+  {ip:"114.114.115.115",label:"114DNS",r:"CN",city:"Nanjing",lat:32.0603,lng:118.7969},
+  {ip:"1.10.10.10",label:"SafeDNS",r:"DE",city:"Frankfurt",lat:50.1109,lng:8.6821},
+  {ip:"203.119.13.77",label:"Athena DNS",r:"SG",city:"Singapore",lat:1.3521,lng:103.8198},
+  {ip:"60.32.149.50",label:"IIJ DNS",r:"JP",city:"Tokyo",lat:35.6762,lng:139.6503},
+  {ip:"195.186.1.111",label:"vDNS",r:"DE",city:"Frankfurt",lat:50.1109,lng:8.6821},
+  {ip:"195.243.214.4",label:"DNS Content",r:"RU",city:"St Petersburg",lat:59.9343,lng:30.3351},
+  {ip:"139.130.4.4",label:"SaskTel",r:"CA",city:"Saskatoon",lat:52.1332,lng:-106.67},
+  {ip:"31.7.37.37",label:"TTNet DNS",r:"NL",city:"Amsterdam",lat:52.3676,lng:4.9041},
+  {ip:"87.213.100.113",label:"OVH DNS",r:"FR",city:"Paris",lat:48.8566,lng:2.3522},
+  {ip:"203.78.194.179",label:"SK Broadband",r:"KR",city:"Seoul",lat:37.5665,lng:126.978},
+  {ip:"203.188.242.211",label:"KDDI DNS",r:"JP",city:"Tokyo",lat:35.6762,lng:139.6503},
+  {ip:"91.121.62.94",label:"Online.net",r:"FR",city:"Paris",lat:48.8566,lng:2.3522},
+  {ip:"148.235.82.66",label:"Rackspace",r:"US",city:"San Antonio",lat:29.4241,lng:-98.4936},
+  {ip:"216.21.129.22",label:"Dyn",r:"US",city:"Manchester NH",lat:42.9956,lng:-71.4548}
 ];
+
+const FLAG={US:"🇺🇸",AU:"🇦🇺",DE:"🇩🇪",RU:"🇷🇺",NL:"🇳🇱",CZ:"🇨🇿",CN:"🇨🇳",SG:"🇸🇬",JP:"🇯🇵",CA:"🇨🇦",FR:"🇫🇷",KR:"🇰🇷"};
 
 const svg=d3.select("#map");
 const W=960,H=500;
 const proj=d3.geoNaturalEarth1().scale(153).translate([W/2,H/2]);
 const path=d3.geoPath(proj);
 
+// zoom
+const zoom=d3.zoom()
+  .scaleExtent([1,12])
+  .on("zoom",e=>{
+    gMain.attr("transform",e.transform);
+    gMain.selectAll(".srv-dot").attr("r",3.2/e.transform.k);
+    gMain.selectAll(".dot-label").attr("font-size",9/e.transform.k);
+  });
+svg.call(zoom);
+
 // defs
 const defs=svg.append("defs");
-const glow=defs.append("radialGradient").attr("id","glow");
-glow.append("stop").attr("offset","0%").attr("stop-color","#22d3ee").attr("stop-opacity",.35);
-glow.append("stop").attr("offset","100%").attr("stop-color","#22d3ee").attr("stop-opacity",0);
+const glow=defs.append("filter").attr("id","glow").attr("x","-50%").attr("y","-50%").attr("width","200%").attr("height","200%");
+glow.append("feGaussianBlur").attr("stdDeviation","2.5").attr("result","blur");
+glow.append("feMerge").selectAll("feMergeNode").data(["blur","SourceGraphic"]).join("feMergeNode").attr("in",d=>d);
 
-// sphere outline
-svg.append("path").datum({type:"Sphere"}).attr("class","sphere").attr("d",path);
+const gMain=svg.append("g");
+
+// sphere
+gMain.append("path").datum({type:"Sphere"}).attr("class","sphere").attr("d",path);
 
 // graticule
-const grat=d3.geoGraticule().step([30,30])();
-svg.append("path").datum(grat).attr("class","graticule").attr("d",path);
+gMain.append("path").datum(d3.geoGraticule().step([30,30])()).attr("class","graticule").attr("d",path);
 
-// load world + draw
+// countries
 d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json").then(world=>{
-  const countries=topojson.feature(world,world.objects.countries);
-  svg.append("g")
-    .selectAll("path")
-    .data(countries.features)
-    .join("path")
-    .attr("class","land")
-    .attr("d",path);
-
-  svg.append("path")
+  gMain.append("g")
+    .selectAll("path").data(topojson.feature(world,world.objects.countries).features).join("path")
+    .attr("class","land").attr("d",path);
+  gMain.append("path")
     .datum(topojson.mesh(world,world.objects.countries,(a,b)=>a!==b))
-    .attr("class","border")
-    .attr("d",path);
+    .attr("class","border").attr("d",path);
 });
 
-// server dots group
-const dotsG=svg.append("g");
-const dots=dotsG.selectAll("circle")
-  .data(S)
-  .join("circle")
+// dots
+const dotsG=gMain.append("g");
+const dotData=dotsG.selectAll("g").data(S).join("g").attr("transform",d=>{
+  const p=proj([d.lng,d.lat]);
+  return "translate("+p[0]+","+p[1]+")";
+});
+
+dotData.append("circle")
   .attr("class","srv-dot")
-  .attr("cx",d=>proj([d.lng,d.lat])[0])
-  .attr("cy",d=>proj([d.lng,d.lat])[1])
   .attr("r",3.2)
   .attr("fill","#2a3a50")
   .attr("opacity",.5)
-  .append("title")
-  .text(d=>d.label+" ("+d.ip+")");
+  .attr("filter","url(#glow)");
 
-// re-select circles (title is child)
-const srvDots=dotsG.selectAll("circle");
+dotData.append("text")
+  .attr("class","dot-label")
+  .attr("x",0).attr("y",-8)
+  .attr("text-anchor","middle")
+  .text(d=>d.label);
 
-// lookup by ip
-const dotMap={};
-S.forEach((s,i)=>dotMap[s.ip]=i);
+const dotCircles=dotsG.selectAll(".srv-dot");
 
-function setDot(ip,ok){
-  const i=dotMap[ip];
-  if(i===undefined)return;
-  d3.select(srvDots.nodes()[i])
-    .attr("fill",ok?"#34d399":"#f87171")
-    .attr("opacity",1);
+function setDot(ip,status){
+  const s=S.findIndex(s=>s.ip===ip);
+  if(s<0)return;
+  const c=d3.select(dotCircles.nodes()[s]);
+  if(status==="success") c.attr("fill","#34d399").attr("opacity",1);
+  else if(status==="pending") c.attr("fill","#2a3a50").attr("opacity",.5);
+  else c.attr("fill","#f87171").attr("opacity",1);
 }
 
-// check logic
+function resetDots(){
+  dotCircles.attr("fill","#2a3a50").attr("opacity",.5);
+}
+
+// check
 const domain=document.getElementById('domain');
 const rtype=document.getElementById('rtype');
 const go=document.getElementById('go');
-const out=document.getElementById('out');
+const out=document.getElementById('resultsArea');
 
 async function check(){
   const d=domain.value.trim().toLowerCase().replace(/^https?:\/\//,'').split('/')[0];
   if(!d)return;
   go.disabled=true;
-  out.innerHTML='<span class="summary">Querying 32 servers…</span>';
-  srvDots.attr("fill","#2a3a50").attr("opacity",.5);
+  resetDots();
+  out.innerHTML=buildGrid(S.map(s=>({...s,status:"pending",ips:"",ms:null})));
   const t0=performance.now();
   const results=await Promise.allSettled(S.map(s=>
     fetch('https://dnsrobot.net/api/dns-query',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({domain:d,recordType:rtype.value,dnsServer:s.ip,timeout:5000})
-    }).then(r=>r.json()).then(j=>({...j,ip:s.ip,label:s.label,region:s.r})).catch(()=>({status:'error',ip:s.ip,label:s.label,region:s.r}))
+    }).then(r=>r.json()).then(j=>({...j,ip:s.ip,label:s.label,region:s.r,city:s.city})).catch(()=>({status:'error',ip:s.ip,label:s.label,region:s.r,city:s.city}))
   ));
   const elapsed=Math.round(performance.now()-t0);
   let ok=0;
-  const html=results.map((r,i)=>{
-    const j=r.status==='fulfilled'?r.value:{status:'error',ip:S[i].ip,label:S[i].label,region:S[i].r};
-    const s=j.status==='success';
-    if(s)ok++;
-    setDot(j.ip,s);
-    const ips=Array.isArray(j.resolvedIPs)?j.resolvedIPs.join(', '):(j.resolvedData||'');
-    return '<div class="row"><span class="dot '+(s?'ok':'err')+'"></span><span class="srv">'+j.ip+'</span><span class="ips">'+(s?ips:'&mdash;')+'</span><span class="ms">'+(s?j.responseTime+'ms':'timeout')+'</span></div>';
+  const cards=results.map((r,i)=>{
+    const j=r.status==='fulfilled'?r.value:{status:'error',ip:S[i].ip,label:S[i].label,region:S[i].r,city:S[i].city};
+    const success=j.status==='success';
+    if(success)ok++;
+    setDot(j.ip,success?"success":"error");
+    const ips=Array.isArray(j.resolvedIPs)?j.resolvedIPs.join(', '):(j.resolvedData||'—');
+    const ms=j.responseTime||null;
+    const msClass=ms?(ms<100?'fast':ms>500?'slow':''):'';
+    const flag=FLAG[j.region]||'';
+    return '<div class="srv-card '+(success?'ok':'err')+'">'
+      +'<span class="dot '+(success?'ok':'err')+'"></span>'
+      +'<div class="info"><span class="name">'+flag+' '+j.label+'</span><span class="region">'+j.city+', '+j.region+' · '+j.ip+'</span></div>'
+      +'<div class="result"><span class="ips">'+ips+'</span>'+(ms?'<span class="ms '+msClass+'">'+ms+'ms</span>':'<span class="ms">timeout</span>')+'</div>'
+      +'</div>';
   }).join('');
-  out.innerHTML=html+'<span class="summary">'+ok+'/'+S.length+' servers resolved · '+elapsed+'ms total</span>';
+  const pct=Math.round(ok/S.length*100);
+  out.innerHTML=
+    '<div class="results-header"><h2>Results</h2><span style="font-family:var(--mono);font-size:13px;color:var(--muted)">'+ok+'/'+S.length+'</span></div>'
+    +'<div class="results-grid">'+cards+'</div>'
+    +'<div class="summary-bar">'
+      +'<span class="count"><span class="ok">'+ok+'</span> ok · <span class="err">'+(S.length-ok)+'</span> failed</span>'
+      +'<div class="progress-bar"><div class="progress-fill" style="width:'+pct+'%"></div></div>'
+      +'<span class="elapsed">'+elapsed+'ms</span>'
+    +'</div>';
   go.disabled=false;
 }
 
+function buildGrid(items){
+  const cards=items.map(j=>{
+    const flag=FLAG[j.region]||'';
+    return '<div class="srv-card">'
+      +'<span class="dot wait"></span>'
+      +'<div class="info"><span class="name">'+flag+' '+j.label+'</span><span class="region">'+j.city+', '+j.region+' · '+j.ip+'</span></div>'
+      +'<div class="result"><span class="ips">—</span><span class="ms"></span></div>'
+      +'</div>';
+  }).join('');
+  return '<div class="results-header"><h2>Results</h2></div><div class="results-grid">'+cards+'</div>';
+}
+
 go.addEventListener('click',check);
-domain.addEventListener('keydown',e=>{if(e.key==='Enter')check();});
+domain.addEventListener('keydown',e=>{if(e.key==='Enter')check()});
 </script>
 </body>
 </html>
