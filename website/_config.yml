@@ -6,18 +6,8 @@ baseurl: ""
 permalink: /:title
 
 exclude:
-  - scripts/
-  - tests/
-  - config/
-  - docs/
   - node_modules/
   - .pre-commit-config.yaml
-  - mise.toml
-  - ruff.toml
-  - MAINTAINER.md
-  - README.md
-  - LICENSE
-  - .gitignore
 
 keep_files:
   - assets/
