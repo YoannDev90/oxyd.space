@@ -1,6 +1,29 @@
+# Python
 __pycache__/
 *.pyc
 
+# Secrets
 key.txt
 *.agekey
 age-*.txt
+
+# Jekyll build
+_site/
+.jekyll-cache/
+.jekyll-metadata
+
+# Ruff
+.ruff_cache/
+
+# Ruby/Bundler
+vendor/
+*.gem
+Gemfile.lock
+.sass-cache/
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
