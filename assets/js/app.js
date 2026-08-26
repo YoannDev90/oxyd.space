@@ -3,142 +3,73 @@ const LANDING_ZONE = 'oxyd.space';
 const TEMPLATE = { owner:{ github:'your-github-username', github_id:12345678 }, records:[ { type:'CNAME', value:'your-github-username.github.io' } ], www:false };
 
 let reservedSet = new Set();
-fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/config/reserved_names.txt`)
-  .then(r=>r.ok?r.text():'')
-  .then(txt=>{
+fetch('https://raw.githubusercontent.com/' + GITHUB_REPO + '/main/config/reserved_names.txt')
+  .then(function(r){ return r.ok ? r.text() : ''; })
+  .then(function(txt){
     if(!txt)return;
-    txt.split('\n').forEach(l=>{
-      const name=l.trim().toLowerCase();
+    txt.split('\n').forEach(function(l){
+      var name=l.trim().toLowerCase();
       if(name&&!name.startsWith('#'))reservedSet.add(name);
     });
-  }).catch(()=>{});
+  }).catch(function(){});
 
-const I18N = {
-  en:{
-    'nav.how':'How it works','nav.faq':'FAQ',
-    'hero.badge':'free forever · open source · no ads',
-    'hero.title':'Claim your corner of',
-    'hero.subtitle':'Get a free subdomain for your personal site, portfolio or project. One issue form, zero dollars, live in minutes.',
-    'stats.claimed':'subdomains claimed','stats.price':'price / year','stats.time':'to go live',
-    'steps.title':'How it works','steps.sub':'Fully automated. No accounts, no waiting lists.',
-    'step1.t':'Fill in the issue form','step1.d':'Open a pre-filled issue on GitHub: pick a name, a record type and its target. Takes one minute.',
-    'step2.t':'The bot takes over','step2.d':'Your GitHub identity is verified (user ID), rules enforced, config committed automatically.',
-    'step3.t':'Registered & live','step3.d':'DNS records are published right away — usually resolving worldwide within five minutes.',
-    'snippet.copy':'Copy','snippet.copied':'Copied!', 'snippet.file':'domains/your.name.json · generated from your issue',
-    'rec.cname':'websites & hosting','rec.a':'servers & IPv6','rec.txt':'verifications',
-    'tools.title':'Tools','tools.sub':'Utilities to help you manage and monitor your subdomains.',
-    'tools.checker':'Availability Checker','tools.checker.desc':'Check if a subdomain is free before registering.',
-    'tools.propagation':'DNS Propagation','tools.propagation.desc':'Check DNS propagation across 32 global servers.',
-    'faq.title':'FAQ',
-    'faq':[
-      ['Is it really free?','Yes. The domain costs a coffee per year to maintain and the whole stack runs on free tiers (GitHub Pages + deSEC). No ads, no tracking, MIT licensed.'],
-      ['What can I use it for?','Personal sites, portfolios, open-source docs, homelab… anything lawful. Subdomains used for phishing, malware or abuse are removed without notice.'],
-      ['Which DNS records are supported?','Up to 4 levels (e.g. s1.service.yourname.oxyd.space) with CNAME, A, AAAA and TXT records, plus an optional automatic www. prefix. MX and NS delegation are not available yet.'],
-      ['How fast does it go live?','Validation takes seconds. After merge, DNS is published automatically and usually resolves worldwide within ~5 minutes.'],
-      ['Does it work with GitHub Pages, Vercel, Netlify…?','Yes. Point a CNAME record at your host target. A full GitHub Pages guide is in the README.'],
-      ['Can I update or delete my subdomain later?','Yes — open a new issue and choose "Update my records" or "Delete my subdomain". Ownership is tied to your GitHub account.'],
-      ['What happens when the domain expires?','<code>oxyd.space</code> is registered one year at a time. A month before expiry, the project moves to a cheaper successor domain: all existing subdomains are migrated automatically and the old names become permanent redirects. Your links keep working — no action needed.']
-    ],
-    'cta.title':'Ready to claim yours?','cta.sub':'It takes about five minutes and costs nothing. Forever.',
-    'cta.btn':'Register now on GitHub',
-    'cta.note':'Heads-up: <code>oxyd.space</code> is registered for <strong>one year</strong>. One month before it expires, the project moves to a cheaper domain — every subdomain will be migrated automatically, and old names will permanently redirect to their new address.',
-    'footer.oss':'Open source under MIT. Built by the community, for the community.',
-    'footer.repo':'Repository','footer.browse':'Taken domains'
-  },
-  fr:{
-    'nav.how':'Comment ça marche','nav.faq':'FAQ',
-    'hero.badge':'gratuit à vie · open source · sans pub',
-    'hero.title':'Réservez votre coin de',
-    'hero.subtitle':"Obtenez un sous-domaine gratuit pour votre site perso, portfolio ou projet. Un formulaire d'issue, zéro euro, en ligne en quelques minutes.",
-    'stats.claimed':'sous-domaines réservés','stats.price':'prix / an','stats.time':'pour être en ligne',
-    'steps.title':'Comment ça marche','steps.sub':'Entièrement automatisé. Sans compte, sans liste d\u2019attente.',
-    'step1.t':'Remplissez le formulaire','step1.d':"Ouvrez une issue pré-remplie sur GitHub : nom, type d'enregistrement et cible. Une minute suffit.",
-    'step2.t':"Le bot s'occupe de tout",'step2.d':'Votre identité GitHub est vérifiée (ID utilisateur), les règles appliquées, la config commitée automatiquement.',
-    'step3.t':'Enregistré & en ligne','step3.d':'Vos enregistrements DNS sont publiés aussitôt — résolution mondiale généralement sous cinq minutes.',
-    'snippet.copy':'Copier','snippet.copied':'Copié !', 'snippet.file':'domains/votre.nom.json · généré depuis votre issue',
-    'rec.cname':'sites & hébergement','rec.a':'serveurs & IPv6','rec.txt':'vérifications',
-    'tools.title':'Outils','tools.sub':'Utilitaires pour gérer et surveiller vos sous-domaines.',
-    'tools.checker':'Vérificateur de disponibilité','tools.checker.desc':'Vérifiez si un sous-domaine est libre avant de l\'enregistrer.',
-    'tools.propagation':'Propagation DNS','tools.propagation.desc':'Vérifiez la propagation DNS sur 32 serveurs mondiaux.',
-    'faq.title':'FAQ',
-    'faq':[
-      ['C\u2019est vraiment gratuit ?','Oui. Le domaine coûte le prix d\u2019un café par an et toute la stack tourne sur des offres gratuites (GitHub Pages + deSEC). Sans pub, sans tracking, licence MIT.'],
-      ['Pour quoi puis-je l\u2019utiliser ?','Sites persos, portfolios, docs de projets open source, homelab… tout ce qui est légal. Le phishing, le malware et les abus sont supprimés sans préavis.'],
-      ['Quels types d\u2019enregistrements ?','Jusqu\u2019à 4 niveaux (ex. s1.service.votrenom.oxyd.space) avec CNAME, A, AAAA et TXT, plus un préfixe www. automatique en option. MX et délégation NS ne sont pas disponibles pour l\u2019instant.'],
-      ['En combien de temps c\u2019est en ligne ?','La validation prend quelques secondes. Après fusion, le DNS est publié automatiquement et résout généralement partout en ~5 minutes.'],
-      ['Compatible GitHub Pages, Vercel, Netlify… ?','Oui. Pointez un CNAME vers votre hébergeur. Un guide complet GitHub Pages est dans le README.'],
-      ['Je peux modifier ou supprimer mon sous-domaine plus tard ?','Oui — ouvrez une nouvelle issue et choisissez « Update my records » ou « Delete my subdomain ». La propriété est liée à votre compte GitHub.'],
-      ['Que se passe-t-il à l\u2019expiration du domaine ?','<code>oxyd.space</code> est enregistré un an à la fois. Un mois avant l\u2019échéance, le projet passera sur un domaine successeur moins cher : tous les sous-domaines existants seront migrés automatiquement et les anciens noms deviendront des redirections permanentes. Vos liens continueront de fonctionner — rien à faire de votre côté.']
-    ],
-    'cta.title':'Prêt à réserver le vôtre ?','cta.sub':'Cinq minutes environ, et aucun coût. Pour toujours.',
-    'cta.btn':'Réserver sur GitHub',
-    'cta.note':"À savoir : <code>oxyd.space</code> est enregistré pour <strong>un an</strong>. Un mois avant l\u2019échéance, le projet passera sur un domaine moins cher — tous les sous-domaines seront migrés automatiquement et les anciens noms redirigeront en permanence vers leur nouvelle adresse.",
-    'footer.oss':'Open source sous licence MIT. Fait par la communauté, pour la communauté.',
-    'footer.repo':'Dépôt','footer.browse':'Domaines pris'
+(function () {
+  function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;');}
+  function highlight(json){
+    return esc(json)
+      .replace(/&quot;/g,'"')
+      .replace(/"([^"]+)":/g,'<span class="tk-key">"$1"</span>:')
+      .replace(/: "([^"]*)"/g,': <span class="tk-str">"$1"</span>');
   }
-};
-
-let lang = localStorage.getItem('oxyd-lang') || (navigator.language||'en').slice(0,2);
-if (!I18N[lang]) lang = 'en';
-
-function t(key){
-  return I18N[lang][key] ?? I18N.en[key] ?? key;
-}
-function fmt(str, vars){
-  return str.replace(/\{(\w+)\}/g, (_,k)=>vars[k]??'');
-}
-function applyLang(){
-  document.documentElement.lang = lang;
-  document.getElementById('langBtn').textContent = lang==='en'?'FR':'EN';
-  document.querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = t(el.dataset.i18n); });
-  document.querySelectorAll('[data-i18n-html]').forEach(el=>{ el.innerHTML = t(el.dataset.i18nHtml); });
-  document.querySelectorAll('[data-i18n-placeholder]').forEach(el=>{ el.placeholder = t(el.dataset.i18nPlaceholder); });
-  const faqList = document.getElementById('faqList');
-  faqList.innerHTML='';
-  I18N[lang].faq.forEach(([q,a])=>{
-    const d=document.createElement('details');d.className='faq-item';
-    const s=document.createElement('summary');s.textContent=q;
-    const p=document.createElement('p');p.innerHTML=a;
-    d.append(s,p);faqList.append(d);
-  });
-  renderSnippet();
-}
-document.getElementById('langBtn').addEventListener('click',()=>{
-  lang = lang==='en'?'fr':'en';
-  localStorage.setItem('oxyd-lang',lang);
-  applyLang();
-});
-
-function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;');}
-function highlight(json){
-  return esc(json)
-    .replace(/&quot;/g,'"')
-    .replace(/"([^"]+)":/g,'<span class="tk-key">"$1"</span>:')
-    .replace(/: "([^"]*)"/g,': <span class="tk-str">"$1"</span>');
-}
-function renderSnippet(){
-  const json=JSON.stringify(TEMPLATE,null,2);
-  document.getElementById('snippetCode').innerHTML=highlight(json);
-}
-const copyBtn=document.getElementById('copyBtn');
-copyBtn.addEventListener('click',async()=>{
-  try{
-    await navigator.clipboard.writeText(JSON.stringify(TEMPLATE,null,2));
-    copyBtn.textContent=t('snippet.copied');
-    setTimeout(()=>{copyBtn.textContent=t('snippet.copy')},1600);
-  }catch{}
-});
-
-(async()=>{
-  try{
-    const r=await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/domains/${LANDING_ZONE}`);
-    if(!r.ok) throw new Error('api');
-    const j=await r.json();
-    const names=(Array.isArray(j)?j:[]).filter(f=>f.name.endsWith('.json')).map(f=>f.name.slice(0,-5));
-    document.getElementById('statClaimed').textContent=names.length;
-  }catch{
-    document.getElementById('statClaimed').textContent='—';
+  function renderSnippet(){
+    var json=JSON.stringify(TEMPLATE,null,2);
+    document.getElementById('snippetCode').innerHTML=highlight(json);
   }
+
+  async function boot() {
+    var i18n = await initI18n('index');
+
+    // FAQ rendering
+    var faqList = document.getElementById('faqList');
+    if (faqList && i18n.dict.faq) {
+      faqList.innerHTML = '';
+      i18n.dict.faq.forEach(function(pair) {
+        var q = pair[0], a = pair[1];
+        var d = document.createElement('details');
+        d.className = 'faq-item';
+        var s = document.createElement('summary');
+        s.textContent = q;
+        var p = document.createElement('p');
+        p.innerHTML = a;
+        d.append(s, p);
+        faqList.append(d);
+      });
+    }
+
+    // Snippet rendering
+    renderSnippet();
+
+    var copyBtn = document.getElementById('copyBtn');
+    if (copyBtn) {
+      copyBtn.addEventListener('click', function() {
+        navigator.clipboard.writeText(JSON.stringify(TEMPLATE, null, 2)).then(function() {
+          copyBtn.textContent = i18n.t('snippet.copied');
+          setTimeout(function() { copyBtn.textContent = i18n.t('snippet.copy'); }, 1600);
+        }).catch(function(){});
+      });
+    }
+
+    // Fetch claimed count
+    try {
+      var r = await fetch('https://api.github.com/repos/' + GITHUB_REPO + '/contents/domains/' + LANDING_ZONE);
+      if (!r.ok) throw new Error('api');
+      var j = await r.json();
+      var names = (Array.isArray(j) ? j : []).filter(function(f){ return f.name.endsWith('.json'); }).map(function(f){ return f.name.slice(0, -5); });
+      document.getElementById('statClaimed').textContent = names.length;
+    } catch(e) {
+      document.getElementById('statClaimed').textContent = '\u2014';
+    }
+  }
+
+  boot();
 })();
-
-applyLang();

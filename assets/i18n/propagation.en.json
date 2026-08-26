@@ -1,0 +1,13 @@
+{
+  "title": "DNS Propagation Checker",
+  "subtitle": "Query 32 global DNS servers simultaneously. Free, no auth, instant results.",
+  "placeholder": "example.com",
+  "cta": "Check",
+  "scroll_hint": "scroll to zoom · drag to pan",
+  "legend.pending": "Pending",
+  "legend.resolved": "Resolved",
+  "legend.failed": "Failed",
+  "results_title": "Results",
+  "footer.powered": "Powered by dnsrobot.net API (32 servers)",
+  "footer.back": "oxyd.space"
+}

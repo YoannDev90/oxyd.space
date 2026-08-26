@@ -1,0 +1,11 @@
+{
+  "title": "Tools",
+  "subtitle": "Utilities to help you manage and monitor your subdomains.",
+  "checker": "Availability Checker",
+  "checker.desc": "Check if a subdomain is free before registering.",
+  "propagation": "DNS Propagation",
+  "propagation.desc": "Check DNS propagation across 32 global servers.",
+  "changelog": "Changelog",
+  "changelog.desc": "See what changed in the project recently.",
+  "coming_soon": "Coming soon"
+}
