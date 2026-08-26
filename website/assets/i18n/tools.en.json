@@ -6,6 +6,5 @@
   "propagation": "DNS Propagation",
   "propagation.desc": "Check DNS propagation across 32 global servers.",
   "changelog": "Changelog",
-  "changelog.desc": "See what changed in the project recently.",
-  "coming_soon": "Coming soon"
+  "changelog.desc": "Track every update and improvement on oxyd.space."
 }

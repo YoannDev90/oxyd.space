@@ -8,6 +8,7 @@ permalink: /:title
 exclude:
   - node_modules/
   - .pre-commit-config.yaml
+  - docs
 
 keep_files:
   - assets/

@@ -6,6 +6,5 @@
   "propagation": "Propagation DNS",
   "propagation.desc": "Vérifiez la propagation DNS sur 32 serveurs mondiaux.",
   "changelog": "Changelog",
-  "changelog.desc": "Voyez les changements récents du projet.",
-  "coming_soon": "Bientôt disponible"
+  "changelog.desc": "Suivez chaque mise à jour et amélioration sur oxyd.space."
 }
