@@ -20,8 +20,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Clean workspace
+        run: find . -maxdepth 1 ! -name '.git' ! -name 'website' ! -name '.' -exec rm -rf {} +
+
       - name: Copy website to root
-        run: cp -r website/* .
+        run: |
+          cp -r website/* .
+          rm -rf website
 
       - name: Deploy to live branch
         run: |
