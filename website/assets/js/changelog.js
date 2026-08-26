@@ -202,14 +202,13 @@ document.addEventListener('DOMContentLoaded', function () {
           console.warn('Failed to fetch', index[i].file, results[i].reason);
           continue;
         }
-        var parsed = parseFrontMatter(results[i].value);
+        var body = results[i].value;
+        // Support optional YAML front-matter (for local generation)
+        var parsed = parseFrontMatter(body);
+        var meta = Object.assign({ version: index[i].version, date: index[i].date }, parsed.meta);
         var rawHtml = marked.parse(parsed.body);
         var rendered = wrapCategories(rawHtml);
-        entries.push({
-          meta: parsed.meta,
-          body: parsed.body,
-          rendered: rendered
-        });
+        entries.push({ meta: meta, body: parsed.body, rendered: rendered });
       }
 
       renderEntries(entries);
