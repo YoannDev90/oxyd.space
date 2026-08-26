@@ -118,7 +118,7 @@ go.addEventListener('click',check);
 domain.addEventListener('keydown',e=>{if(e.key==='Enter')check()});
 
 Promise.all([
-  fetch('assets/dns.json').then(r=>r.json()),
+  fetch('/assets/dns.json').then(r=>r.json()),
   d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
 ]).then(([servers,world])=>{
   gMain.append("g")

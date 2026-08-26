@@ -1,0 +1,24 @@
+title: oxyd.space
+description: Free subdomains for everyone. Claim yourname.oxyd.space through a GitHub issue form.
+url: https://oxyd.space
+baseurl: ""
+
+permalink: /:title
+
+exclude:
+  - scripts/
+  - tests/
+  - config/
+  - docs/
+  - node_modules/
+  - .pre-commit-config.yaml
+  - mise.toml
+  - ruff.toml
+  - MAINTAINER.md
+  - README.md
+  - LICENSE
+  - .gitignore
+
+keep_files:
+  - assets/
+  - CNAME
