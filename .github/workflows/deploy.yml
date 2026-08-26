@@ -34,6 +34,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git reset HEAD
-          git add -- assets/ docs/ CNAME index.html 404.html robots.txt sitemap.xml checker.html propagation.html tools.html changelog.html
+          git add -- _config.yml assets/ docs/ CNAME index.html 404.html robots.txt sitemap.xml checker.html propagation.html tools.html changelog.html
           git commit -m "deploy: update site from main" || echo "No changes to commit"
           git push --force origin HEAD:live
