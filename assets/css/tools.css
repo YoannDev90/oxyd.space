@@ -1,0 +1,68 @@
+.tools-hero {
+  text-align: center;
+  padding: 80px 0 48px;
+}
+.tools-hero h1 {
+  font-size: clamp(32px, 5vw, 48px);
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+.tools-hero .sub {
+  color: var(--muted);
+  font-size: 17px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  padding-bottom: 96px;
+}
+.tool-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 32px 28px;
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color .2s, box-shadow .2s, transform .15s;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+}
+.tool-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 24px rgba(34,211,238,.12);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+.tool-card h2 {
+  font-size: 20px;
+  font-weight: 700;
+}
+.tool-card p {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.tool-icon {
+  font-size: 32px;
+  line-height: 1;
+}
+.coming-soon {
+  opacity: .55;
+  pointer-events: none;
+}
+.badge-soon {
+  display: inline-block;
+  background: var(--line);
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  margin-top: auto;
+  align-self: flex-start;
+}

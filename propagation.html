@@ -13,6 +13,7 @@ permalink: /propagation
 <link rel="stylesheet" href="/assets/css/prop-style.css">
 <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script defer src="/assets/js/i18n.js"></script>
 <script defer src="/assets/js/prop-app.js"></script>
 </head>
 <body>
@@ -21,36 +22,38 @@ permalink: /propagation
   <div class="container nav-inner">
     <a class="logo" href="/"><img src="/assets/logo.svg" alt="" width="24" height="24" style="display:block">oxyd<span style="color:var(--muted)">·space</span></a>
     <div class="nav-links">
-      <a href="/">Home</a>
+      <a href="/" data-i18n="nav.home">Home</a>
+      <a href="/tools" data-i18n="nav.tools">Tools</a>
       <a href="https://github.com/YoannDev90/oxyd.space">GitHub</a>
+      <button class="lang-btn" id="langBtn" aria-label="Switch language">FR</button>
     </div>
   </div>
 </nav>
 
 <div class="container">
   <div class="tool">
-    <h1>DNS Propagation Checker</h1>
-    <p class="sub">Query 32 global DNS servers simultaneously. Free, no auth, instant results.</p>
+    <h1 data-i18n="title">DNS Propagation Checker</h1>
+    <p class="sub" data-i18n="subtitle">Query 32 global DNS servers simultaneously. Free, no auth, instant results.</p>
 
     <div class="map-wrap">
-      <div class="map-hint">scroll to zoom · drag to pan</div>
+      <div class="map-hint" data-i18n="scroll_hint">scroll to zoom · drag to pan</div>
       <svg id="map" viewBox="0 0 960 500"></svg>
       <div class="map-legend">
-        <span><span class="dot wait"></span> Pending</span>
-        <span><span class="dot ok"></span> Resolved</span>
-        <span><span class="dot err"></span> Failed</span>
+        <span><span class="dot wait"></span> <span data-i18n="legend.pending">Pending</span></span>
+        <span><span class="dot ok"></span> <span data-i18n="legend.resolved">Resolved</span></span>
+        <span><span class="dot err"></span> <span data-i18n="legend.failed">Failed</span></span>
       </div>
     </div>
 
     <div class="form">
       <div class="input-wrap">
-        <input id="domain" type="text" autocomplete="off" spellcheck="false" maxlength="253" placeholder="example.com" autofocus>
+        <input id="domain" type="text" autocomplete="off" spellcheck="false" maxlength="253" data-i18n-placeholder="placeholder" placeholder="example.com" autofocus>
       </div>
       <select id="rtype">
         <option value="A">A</option><option value="AAAA">AAAA</option><option value="CNAME">CNAME</option>
         <option value="MX">MX</option><option value="NS">NS</option><option value="TXT">TXT</option>
       </select>
-      <button class="btn" id="go">Check</button>
+      <button class="btn" id="go" data-i18n="cta">Check</button>
     </div>
 
     <div id="resultsArea"></div>
@@ -59,8 +62,8 @@ permalink: /propagation
 
 <footer>
   <div class="container">
-    Powered by <a href="https://dnsrobot.net">dnsrobot.net</a> API (32 servers) ·
-    <a href="/">oxyd.space</a>
+    <span data-i18n="footer.powered">Powered by dnsrobot.net API (32 servers)</span> ·
+    <a href="/" data-i18n="footer.back">oxyd.space</a>
   </div>
 </footer>
 

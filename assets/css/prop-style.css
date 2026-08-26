@@ -18,8 +18,10 @@ nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(12px);background:rgba(
 .nav-inner{display:flex;align-items:center;justify-content:space-between;height:60px}
 .logo{font-family:var(--mono);font-weight:700;font-size:16px;color:var(--text);display:flex;align-items:center;gap:8px}
 .logo:hover{text-decoration:none}
-.nav-links{display:flex;gap:20px;font-size:14px}
+.nav-links{display:flex;gap:20px;font-size:14px;align-items:center}
 .nav-links a{color:var(--muted)}.nav-links a:hover{color:var(--text)}
+.lang-btn{font-family:var(--mono);font-size:12.5px;color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:8px;padding:5px 10px;cursor:pointer;transition:.15s}
+.lang-btn:hover{color:var(--text);border-color:var(--accent)}
 
 .tool{margin:40px auto;max-width:860px}
 h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
