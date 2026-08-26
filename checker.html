@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Availability Checker — oxyd.space</title>
+<meta name="description" content="Check if a subdomain is available on oxyd.space before registering.">
+<link rel="canonical" href="https://oxyd.space/checker.html">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22 role=%22img%22 aria-label=%22oxyd.space logo%22%3E%0A  %3Cdefs%3E%0A    %3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%0A      %3Cstop offset=%220%22 stop-color=%22%2322d3ee%22/%3E%0A      %3Cstop offset=%221%22 stop-color=%22%23818cf8%22/%3E%0A    %3C/linearGradient%3E%0A  %3C/defs%3E%0A  %3Cg fill=%22none%22 stroke=%22url(%23g)%22 stroke-width=%226%22%3E%0A    %3Ccircle cx=%2225%22 cy=%2232%22 r=%2214%22/%3E%0A    %3Ccircle cx=%2239%22 cy=%2232%22 r=%2214%22/%3E%0A    %3Cpath d=%22M 36.57 45.79 A 14 14 0 0 1 28.28 41.00%22/%3E%0A  %3C/g%3E%0A%3C/svg%3E">
+<link rel="stylesheet" href="assets/css/checker.css">
+<script defer src="assets/js/checker.js"></script>
+</head>
+<body>
+<nav>
+  <div class="nav-inner container">
+    <a href="/" class="logo"><span class="dot"></span>oxyd.space</a>
+    <div class="nav-links">
+      <a href="/" data-i18n="nav.home">Home</a>
+      <a href="propagation.html" data-i18n="nav.propagation">Propagation</a>
+      <button id="langBtn" class="lang-btn">FR</button>
+    </div>
+  </div>
+</nav>
+
+<main class="container">
+  <div class="tool">
+    <h1 data-i18n="title">Availability Checker</h1>
+    <p class="sub" data-i18n="subtitle">Check if a subdomain is free before registering it.</p>
+
+    <div class="checker-box">
+      <label class="checker-label" data-i18n="label">Subdomain name</label>
+      <div class="checker-row">
+        <div class="input-wrap">
+          <input type="text" id="domainInput" data-i18n-placeholder="placeholder" placeholder="yourname" autocomplete="off" spellcheck="false">
+          <span class="suffix">.oxyd.space</span>
+        </div>
+        <button id="go" class="btn" data-i18n="cta">Check</button>
+      </div>
+      <div id="result" class="result"></div>
+    </div>
+
+    <div class="info-section">
+      <h2 data-i18n="rules.title">Naming rules</h2>
+      <ul class="rules">
+        <li data-i18n="rules.labels">1–4 labels separated by dots (e.g. <code>api.myname</code>)</li>
+        <li data-i18n="rules.chars">Lowercase a–z, digits 0–9, hyphens (no leading/trailing hyphen)</li>
+        <li data-i18n="rules.max">63 characters per label</li>
+        <li data-i18n="rules.reserved">Some names are reserved (www, root, ns, api…)</li>
+      </ul>
+    </div>
+
+    <div class="info-section">
+      <h2 data-i18n="records.title">Supported record types</h2>
+      <div class="records">
+        <span class="chip"><em>CNAME</em> <span data-i18n="rec.cname">websites & hosting</span></span>
+        <span class="chip"><em>A</em> <span data-i18n="rec.a">servers & IPv4</span></span>
+        <span class="chip"><em>AAAA</em> <span data-i18n="rec.aaaa">servers & IPv6</span></span>
+        <span class="chip"><em>TXT</em> <span data-i18n="rec.txt">verifications</span></span>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="container footer-inner">
+    <span data-i18n="footer.oss">Open source under MIT.</span>
+    <a href="https://github.com/YoannDev90/oxyd.space" data-i18n="footer.repo">Repository</a>
+  </div>
+</footer>
+</body>
+</html>

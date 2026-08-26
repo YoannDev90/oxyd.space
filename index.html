@@ -77,18 +77,6 @@
   <h1><span data-i18n="hero.title">Claim your corner of</span><br><span class="brand">oxyd.space</span></h1>
   <p class="subtitle" data-i18n="hero.subtitle">Get a free subdomain for your personal site, portfolio or project. One issue form, zero dollars, live in minutes.</p>
 
-  <div class="checker">
-    <label class="checker-label" for="domainInput" data-i18n="checker.label">Check availability</label>
-    <div class="checker-row">
-      <div class="domain-input-wrap">
-        <input id="domainInput" type="text" autocomplete="off" spellcheck="false" maxlength="63" placeholder="yourname" data-i18n-placeholder="checker.placeholder">
-        <span class="domain-suffix">.oxyd.space</span>
-      </div>
-      <button class="btn-primary" id="checkBtn" data-i18n="checker.cta">Check</button>
-    </div>
-    <div class="checker-result info" id="checkerResult" data-i18n="checker.idle">Type a name to see if it's free.</div>
-  </div>
-
   <div class="stats">
     <div class="stat"><b id="statClaimed">—</b><span data-i18n="stats.claimed">subdomains claimed</span></div>
     <div class="stat"><b>$0</b><span data-i18n="stats.price">price / year</span></div>
@@ -131,6 +119,25 @@
       <span class="record-chip"><em>CNAME</em><span data-i18n="rec.cname">websites &amp; hosting</span></span>
       <span class="record-chip"><em>A / AAAA</em><span data-i18n="rec.a">servers &amp; IPv6</span></span>
       <span class="record-chip"><em>TXT</em><span data-i18n="rec.txt">verifications</span></span>
+    </div>
+  </div>
+</section>
+
+<section id="tools">
+  <div class="container">
+    <h2 class="section-title" data-i18n="tools.title">Tools</h2>
+    <p class="section-sub" data-i18n="tools.sub">Utilities to help you manage and monitor your subdomains.</p>
+    <div class="tools-grid">
+      <a href="checker.html" class="tool-card">
+        <div class="tool-icon">🔍</div>
+        <h3 data-i18n="tools.checker">Availability Checker</h3>
+        <p data-i18n="tools.checker.desc">Check if a subdomain is free before registering.</p>
+      </a>
+      <a href="propagation.html" class="tool-card">
+        <div class="tool-icon">🌐</div>
+        <h3 data-i18n="tools.propagation">DNS Propagation</h3>
+        <p data-i18n="tools.propagation.desc">Check DNS propagation across 32 global servers.</p>
+      </a>
     </div>
   </div>
 </section>

@@ -1,10 +1,8 @@
 const GITHUB_REPO = 'YoannDev90/oxyd.space';
 const LANDING_ZONE = 'oxyd.space';
-const RESERVED_FALLBACK = ['www','root','apex','ns','ns1','ns2','mx','smtp','mail','api','app','admin','dashboard','db','vpn','dns','register','login','auth','cdn','static','status','git','docs','help','support','contact'];
-const MAX_LABELS = 3;
-const LABEL_RE = /^(?!-)[a-z0-9-]{1,63}(?<!-)$/;
 const TEMPLATE = { owner:{ github:'your-github-username', github_id:12345678 }, records:[ { type:'CNAME', value:'your-github-username.github.io' } ], www:false };
-let reservedSet = new Set(RESERVED_FALLBACK);
+
+let reservedSet = new Set();
 fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/config/reserved_names.txt`)
   .then(r=>r.ok?r.text():'')
   .then(txt=>{
@@ -21,12 +19,6 @@ const I18N = {
     'hero.badge':'free forever · open source · no ads',
     'hero.title':'Claim your corner of',
     'hero.subtitle':'Get a free subdomain for your personal site, portfolio or project. One issue form, zero dollars, live in minutes.',
-    'checker.label':'Check availability','checker.placeholder':'yourname','checker.cta':'Check',
-    'checker.idle':"Type a name to see if it's free.",
-    'checker.available':'{d} is available!','checker.taken':'{d} is already taken.',
-    'checker.invalid':'Invalid name. Use a-z, 0-9 and hyphens (up to 3 levels, e.g. sub.site).',
-    'checker.reserved':'{d} cannot end a hostname (reserved). Put it first instead, e.g. {d}yourname','checker.checking':'Checking…','checker.error':'Could not check right now. Try again later.',
-    'checker.register':'Register {d}',
     'stats.claimed':'subdomains claimed','stats.price':'price / year','stats.time':'to go live',
     'steps.title':'How it works','steps.sub':'Fully automated. No accounts, no waiting lists.',
     'step1.t':'Fill in the issue form','step1.d':'Open a pre-filled issue on GitHub: pick a name, a record type and its target. Takes one minute.',
@@ -34,6 +26,9 @@ const I18N = {
     'step3.t':'Registered & live','step3.d':'DNS records are published right away — usually resolving worldwide within five minutes.',
     'snippet.copy':'Copy','snippet.copied':'Copied!', 'snippet.file':'domains/your.name.json · generated from your issue',
     'rec.cname':'websites & hosting','rec.a':'servers & IPv6','rec.txt':'verifications',
+    'tools.title':'Tools','tools.sub':'Utilities to help you manage and monitor your subdomains.',
+    'tools.checker':'Availability Checker','tools.checker.desc':'Check if a subdomain is free before registering.',
+    'tools.propagation':'DNS Propagation','tools.propagation.desc':'Check DNS propagation across 32 global servers.',
     'faq.title':'FAQ',
     'faq':[
       ['Is it really free?','Yes. The domain costs a coffee per year to maintain and the whole stack runs on free tiers (GitHub Pages + deSEC). No ads, no tracking, MIT licensed.'],
@@ -41,7 +36,7 @@ const I18N = {
       ['Which DNS records are supported?','Up to 4 levels (e.g. s1.service.yourname.oxyd.space) with CNAME, A, AAAA and TXT records, plus an optional automatic www. prefix. MX and NS delegation are not available yet.'],
       ['How fast does it go live?','Validation takes seconds. After merge, DNS is published automatically and usually resolves worldwide within ~5 minutes.'],
       ['Does it work with GitHub Pages, Vercel, Netlify…?','Yes. Point a CNAME record at your host target. A full GitHub Pages guide is in the README.'],
-      ['Can I update or delete my subdomain later?','Yes — open a new issue and choose “Update my records” or “Delete my subdomain”. Ownership is tied to your GitHub account.'],
+      ['Can I update or delete my subdomain later?','Yes — open a new issue and choose "Update my records" or "Delete my subdomain". Ownership is tied to your GitHub account.'],
       ['What happens when the domain expires?','<code>oxyd.space</code> is registered one year at a time. A month before expiry, the project moves to a cheaper successor domain: all existing subdomains are migrated automatically and the old names become permanent redirects. Your links keep working — no action needed.']
     ],
     'cta.title':'Ready to claim yours?','cta.sub':'It takes about five minutes and costs nothing. Forever.',
@@ -54,20 +49,17 @@ const I18N = {
     'nav.how':'Comment ça marche','nav.faq':'FAQ',
     'hero.badge':'gratuit à vie · open source · sans pub',
     'hero.title':'Réservez votre coin de',
-    'hero.subtitle':"Obtenez un sous-domaine gratuit pour votre site perso, portfolio ou projet. Un formulaire d’issue, zéro euro, en ligne en quelques minutes.",
-    'checker.label':'Vérifier la disponibilité','checker.placeholder':'votre-nom','checker.cta':'Vérifier',
-    'checker.idle':"Tapez un nom pour voir s'il est libre.",
-    'checker.available':'{d} est disponible !','checker.taken':'{d} est déjà pris.',
-    'checker.invalid':'Nom invalide. Utilisez a-z, 0-9 et des tirets (jusqu\u2019à 3 niveaux, ex. sous.site).',
-    'checker.reserved':'{d} ne peut pas terminer un nom (réservé). Mettez-le en premier, ex. {d}votrenom','checker.checking':'Vérification…','checker.error':'Impossible de vérifier pour le moment. Réessayez plus tard.',
-    'checker.register':'Réserver {d}',
+    'hero.subtitle':"Obtenez un sous-domaine gratuit pour votre site perso, portfolio ou projet. Un formulaire d'issue, zéro euro, en ligne en quelques minutes.",
     'stats.claimed':'sous-domaines réservés','stats.price':'prix / an','stats.time':'pour être en ligne',
     'steps.title':'Comment ça marche','steps.sub':'Entièrement automatisé. Sans compte, sans liste d\u2019attente.',
-    'step1.t':'Remplissez le formulaire','step1.d':'Ouvrez une issue pré-remplie sur GitHub : nom, type d’enregistrement et cible. Une minute suffit.',
-    'step2.t':'Le bot s’occupe de tout','step2.d':'Votre identité GitHub est vérifiée (ID utilisateur), les règles appliquées, la config commitée automatiquement.',
+    'step1.t':'Remplissez le formulaire','step1.d':'Ouvrez une issue pré-remplie sur GitHub : nom, type d'enregistrement et cible. Une minute suffit.',
+    'step2.t':'Le bot s'occupe de tout','step2.d':'Votre identité GitHub est vérifiée (ID utilisateur), les règles appliquées, la config commitée automatiquement.',
     'step3.t':'Enregistré & en ligne','step3.d':'Vos enregistrements DNS sont publiés aussitôt — résolution mondiale généralement sous cinq minutes.',
     'snippet.copy':'Copier','snippet.copied':'Copié !', 'snippet.file':'domains/votre.nom.json · généré depuis votre issue',
     'rec.cname':'sites & hébergement','rec.a':'serveurs & IPv6','rec.txt':'vérifications',
+    'tools.title':'Outils','tools.sub':'Utilitaires pour gérer et surveiller vos sous-domaines.',
+    'tools.checker':'Vérificateur de disponibilité','tools.checker.desc':'Vérifiez si un sous-domaine est libre avant de l\'enregistrer.',
+    'tools.propagation':'Propagation DNS','tools.propagation.desc':'Vérifiez la propagation DNS sur 32 serveurs mondiaux.',
     'faq.title':'FAQ',
     'faq':[
       ['C\u2019est vraiment gratuit ?','Oui. Le domaine coûte le prix d\u2019un café par an et toute la stack tourne sur des offres gratuites (GitHub Pages + deSEC). Sans pub, sans tracking, licence MIT.'],
@@ -137,63 +129,13 @@ copyBtn.addEventListener('click',async()=>{
   }catch{}
 });
 
-const input=document.getElementById('domainInput');
-const checkBtn=document.getElementById('checkBtn');
-const resultEl=document.getElementById('checkerResult');
-let takenCache=null;
-
-async function loadTaken(){
-  if(takenCache && Date.now()-takenCache.ts<300000) return takenCache.names;
-  const r=await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/domains/${LANDING_ZONE}`);
-  if(!r.ok) throw new Error('api');
-  const j=await r.json();
-  const names=(Array.isArray(j)?j:[]).filter(f=>f.name.endsWith('.json')).map(f=>f.name.slice(0,-5));
-  takenCache={names:new Set(names),ts:Date.now()};
-  return takenCache.names;
-}
-function setResult(html){resultEl.innerHTML=html;}
-function linkFor(name,labelKey){
-  const base=`https://github.com/${GITHUB_REPO}/issues/new?template=register.yml`;
-  const q=`&title=${encodeURIComponent('Subdomain registration')}&request-type=${encodeURIComponent('Register a new subdomain')}&subdomain=${encodeURIComponent(name)}`;
-  return `<a href="${base}${q}" target="_blank" rel="noopener">${fmt(t(labelKey),{d:name+'.oxyd.space'})}</a>`;
-}
-function isValidName(raw){
-  const labels=raw.split('.');
-  if(labels.length<1||labels.length>MAX_LABELS)return false;
-  return labels.every(l=>LABEL_RE.test(l)&&!l.startsWith('xn--'));
-}
-async function check(){
-  const raw=input.value.trim().toLowerCase().replace(/\.oxyd\.space$/,'').replace(/^https?:\/\//,'');
-  if(!isValidName(raw)){
-    setResult(`<span class="bad">${t('checker.invalid')}</span>`);return;
-  }
-  const labels=raw.split('.');
-  const lastHit=labels[labels.length-1];
-  if(reservedSet.has(lastHit)){
-    setResult(`<span class="bad">${fmt(t('checker.reserved'),{d:lastHit+'.'})}</span>`);return;
-  }
-  checkBtn.disabled=true;
-  setResult(`<span class="info">${t('checker.checking')}</span>`);
-  try{
-    const names=await loadTaken();
-    if(names.has(raw)){
-      setResult(`<span class="bad">${fmt(t('checker.taken'),{d:raw+'.oxyd.space'})}</span>`);
-    }else{
-      setResult(`<span class="ok">${fmt(t('checker.available'),{d:raw+'.oxyd.space'})}</span>${linkFor(raw,'checker.register')}`);
-    }
-  }catch{
-    setResult(`<span class="bad">${t('checker.error')}</span>`);
-  }finally{
-    checkBtn.disabled=false;
-  }
-}
-checkBtn.addEventListener('click',check);
-input.addEventListener('keydown',e=>{if(e.key==='Enter')check();});
-
 (async()=>{
   try{
-    const names=await loadTaken();
-    document.getElementById('statClaimed').textContent=names.size;
+    const r=await fetch(`https://api.github.com/repos/${GITHUB_REPO}/contents/domains/${LANDING_ZONE}`);
+    if(!r.ok) throw new Error('api');
+    const j=await r.json();
+    const names=(Array.isArray(j)?j:[]).filter(f=>f.name.endsWith('.json')).map(f=>f.name.slice(0,-5));
+    document.getElementById('statClaimed').textContent=names.length;
   }catch{
     document.getElementById('statClaimed').textContent='—';
   }
