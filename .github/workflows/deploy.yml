@@ -41,7 +41,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout --orphan live-tmp
           git reset
-          git add -A dist/
+          git add -f dist/
           git mv dist/* .
           rmdir dist
           git commit -m "deploy: update site from main" || echo "No changes to commit"
