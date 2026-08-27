@@ -1,0 +1,25 @@
+name: Upgrade redirect TTLs
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install sops
+        run: |
+          curl -fsSL -o /usr/local/bin/sops https://github.com/getsops/sops/releases/download/v3.9.4/sops-v3.9.4.linux.amd64
+          chmod +x /usr/local/bin/sops
+      - run: python scripts/update_dns.py --upgrade-ttl
+        env:
+          SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}

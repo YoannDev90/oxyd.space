@@ -1,0 +1,59 @@
+name: Redirect subdomain
+description: Redirect an oxyd.space subdomain to another URL
+title: "Subdomain redirect"
+labels: ["redirect"]
+body:
+  - type: dropdown
+    id: base-domain
+    attributes:
+      label: Base domain
+      description: "The subdomain will be [name].<chosen domain>. Most users pick oxyd.space."
+      options:
+        - oxyd.space
+    validations:
+      required: true
+
+  - type: input
+    id: subdomain
+    attributes:
+      label: Subdomain name
+      description: |
+        The subdomain to redirect (the part before .oxyd.space).
+        Examples: `old-site`, `blog`, `api`
+      placeholder: old-site
+    validations:
+      required: true
+
+  - type: input
+    id: destination
+    attributes:
+      label: Destination URL
+      description: |
+        Where should the redirect point to?
+        Examples: `https://new-site.com`, `https://example.com/path/to/page`, `https://example.com:8080`
+      placeholder: https://new-site.com
+    validations:
+      required: true
+
+  - type: dropdown
+    id: redirect-type
+    attributes:
+      label: Redirect type
+      description: |
+        - **301** → Permanent (recommended for SEO, browsers cache it)
+        - **302** → Temporary (useful for testing)
+      options:
+        - "301 (permanent)"
+        - "302 (temporary)"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Terms
+      options:
+        - label: I will not use this redirect for phishing, malware, spam or illegal content
+          required: true
+        - label: I understand the service is provided as-is and may be discontinued
+          required: true

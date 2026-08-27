@@ -15,6 +15,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from urllib.parse import urlparse
 
 DESEC_API = "https://desec.io/api/v1"
 MANAGED_TAG = "oxyd-auto"
@@ -22,6 +23,8 @@ DOMAINS_DIR = "domains"
 CONFIG_FILE = os.path.join("config", "domains.json")
 SECRETS_FILE = os.path.join("config", "secrets.enc.json")
 DEFAULT_TTL = 3600
+REDIRECT_TTL = 900
+REDIRECT_CENTER = "redirect.center"
 MAX_RETRIES = 4
 TIMEOUT = 30
 ALLOWED_TYPES = ("CNAME", "A", "AAAA", "TXT")
@@ -120,6 +123,31 @@ def pres_content(rtype, value):
     return value.lower()
 
 
+def build_redirect_cname(destination, status_code="301"):
+    """Build a redirect.center CNAME value from a destination URL."""
+    parsed = urlparse(destination)
+    host = parsed.hostname or ""
+    port = parsed.port
+    path = parsed.path or "/"
+    scheme = parsed.scheme or "https"
+
+    parts = [host]
+    if path and path != "/":
+        for segment in path.strip("/").split("/"):
+            if segment:
+                parts.append("opts-slash")
+                parts.append(segment)
+        parts.append("opts-slash")
+    if scheme == "https":
+        parts.append("opts-https")
+    if status_code in ("302", "307", "308"):
+        parts.append(f"opts-statuscode-{status_code}")
+    if port and port not in (80, 443):
+        parts.append(f"opts-port-{port}")
+    parts.append(REDIRECT_CENTER)
+    return pres_content("CNAME", ".".join(parts))
+
+
 def normalize_subname(value, zone):
     value = str(value).rstrip(".")
     suffix = f".{zone}"
@@ -155,6 +183,27 @@ def desired_records(configs):
         tag = MANAGED_TAG + (
             f" owner=@{owner['github']}" if isinstance(owner.get("github"), str) else ""
         )
+
+        redirect_to = cfg.get("redirect_to")
+        if redirect_to:
+            status_code = cfg.get("redirect_status", "301")
+            cname_value = build_redirect_cname(redirect_to, status_code)
+            subname = label.lower()
+            key = (subname, "CNAME")
+            entry = desired.setdefault(
+                key,
+                {
+                    "subname": subname,
+                    "type": "CNAME",
+                    "ttl": REDIRECT_TTL,
+                    "records": [],
+                    "comment": tag[:255],
+                },
+            )
+            if cname_value not in entry["records"]:
+                entry["records"].append(cname_value)
+            continue
+
         names = [label]
         if cfg.get("www") is True:
             names.append(f"www.{label}")
@@ -336,10 +385,89 @@ def sync_zone(zone_cfg, secrets, dry_run):
     return True
 
 
+def upgrade_redirect_ttls(dry_run=False):
+    """Upgrade redirect CNAMEs from TTL 900 to 3600 after initial propagation."""
+    import datetime
+
+    zones = load_zone_registry()
+    secrets = decrypt_secrets()
+    upgraded = 0
+
+    for zone_cfg in zones:
+        zone = zone_cfg["domain"]
+        token = token_for(zone_cfg, secrets)
+        rrsets = fetch_all_rrsets(zone, token)
+
+        for rr in rrsets:
+            if rr.get("type") != "CNAME":
+                continue
+            comment = rr.get("comment") or ""
+            if not comment.startswith(MANAGED_TAG):
+                continue
+            records = rr.get("records") or []
+            if not any(REDIRECT_CENTER in r for r in records):
+                continue
+            if rr.get("ttl") != REDIRECT_TTL:
+                continue
+
+            created = rr.get("created")
+            if not created:
+                continue
+            try:
+                created_dt = datetime.datetime.fromisoformat(
+                    created.replace("Z", "+00:00")
+                )
+            except (ValueError, AttributeError):
+                continue
+
+            now = datetime.datetime.now(datetime.timezone.utc)
+            age_hours = (now - created_dt).total_seconds() / 3600
+            if age_hours < 4:
+                continue
+
+            subname = normalize_subname(rr.get("subname", ""), zone)
+            print(
+                f"  upgrading TTL for {subname}.{zone}: {REDIRECT_TTL} → {REDIRECT_TTL * 4}"
+            )
+
+            if dry_run:
+                upgraded += 1
+                continue
+
+            try:
+                sub = urllib.parse.quote(subname)
+                api(
+                    "PATCH",
+                    f"/domains/{zone}/rrsets/{sub}/CNAME/",
+                    body={
+                        "ttl": REDIRECT_TTL * 4,
+                        "records": records,
+                        "comment": comment,
+                    },
+                    token=token,
+                )
+                upgraded += 1
+                print(f"  upgraded {subname}.{zone}")
+            except RuntimeError as e:
+                print(f"  ERROR upgrading {subname}.{zone}: {e}", file=sys.stderr)
+
+    print(
+        f"\n{upgraded} redirect(s) upgraded."
+        if upgraded
+        else "\nNo redirects to upgrade."
+    )
+
+
 def main(zone_filter=None):
     dry_run = os.environ.get("OXYD_DRY_RUN") == "true"
+    upgrade_ttl = "--upgrade-ttl" in sys.argv
+
     if dry_run:
         print("DRY RUN mode: no changes will be applied.")
+
+    if upgrade_ttl:
+        upgrade_redirect_ttls(dry_run)
+        return
 
     zones = load_zone_registry()
     if zone_filter:

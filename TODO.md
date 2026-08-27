@@ -1,4 +1,3 @@
-- [] Redirect Manager (via GitHub issue, option 1: mini-repo redirect) — 🟡 MEDIUM
-- [x] GitHub OAuth Device Flow (personal dashboard) — 🟡 MEDIUM
+- [x] Redirect Manager (via GitHub issue, redirect.center) — 🟡 MEDIUM
 - [ ] Rate limiting on DNS API — 🟡 MEDIUM
-- [ ] Monitoring uptime (UptimeRobot / BetterStack) — 🟢 LOW
+- [ ] Monitoring uptime (BetterStack) — 🟢 LOW

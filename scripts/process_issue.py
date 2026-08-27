@@ -4,13 +4,15 @@ import json
 import os
 import re
 import sys
+import urllib.parse
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import update_dns as udn
 import validate as v
 
 GITHUB_API = "https://api.github.com"
-TITLE_PREFIX = "Subdomain registration"
+TITLE_PREFIX_REG = "Subdomain registration"
+TITLE_PREFIX_REDIRECT = "Subdomain redirect"
 
 LABEL_REQUEST = "What do you want to do?"
 LABEL_BASE = "Base domain"
@@ -21,9 +23,16 @@ LABEL_EXTRA = "Additional DNS records (optional)"
 LABEL_WWW = "Enable www prefix"
 LABEL_TERMS = "Terms"
 
+REDIRECT_DESTINATION = "Destination URL"
+REDIRECT_TYPE = "Redirect type"
+
 REQ_REGISTER = "Register a new subdomain"
 REQ_UPDATE = "Update my records"
 REQ_DELETE = "Delete my subdomain"
+
+REDIRECT_CENTER = "redirect.center"
+REDIRECT_TTL_INITIAL = 900
+REDIRECT_TTL_FINAL = 3600
 
 
 def parse_form(body):
@@ -153,6 +162,190 @@ def finish_issue(repo, number, ok, body, label, token):
     )
 
 
+def build_redirect_cname(destination, status_code="301"):
+    """Build a redirect.center CNAME value from a destination URL."""
+    parsed = urllib.parse.urlparse(destination)
+    host = parsed.hostname or ""
+    port = parsed.port
+    path = parsed.path or "/"
+    scheme = parsed.scheme or "https"
+
+    parts = [host]
+    if path and path != "/":
+        for segment in path.strip("/").split("/"):
+            if segment:
+                parts.append("opts-slash")
+                parts.append(segment)
+        parts.append("opts-slash")
+    if scheme == "https":
+        parts.append("opts-https")
+    if status_code in ("302", "307", "308"):
+        parts.append(f"opts-statuscode-{status_code}")
+    if port and port not in (80, 443):
+        parts.append(f"opts-port-{port}")
+    parts.append(REDIRECT_CENTER)
+    return ".".join(parts) + "."
+
+
+def process_redirect_issue(issue, token, repo):
+    """Handle a redirect issue: create a CNAME via redirect.center."""
+    number = issue["number"]
+    author = (issue.get("user") or {}).get("login", "")
+    body = issue.get("body") or ""
+
+    sections = parse_form(body)
+
+    missing = [
+        line
+        for line in (
+            LABEL_BASE,
+            LABEL_SUBDOMAIN,
+            REDIRECT_DESTINATION,
+            REDIRECT_TYPE,
+            LABEL_TERMS,
+        )
+        if not sections.get(line)
+    ]
+    if missing:
+        fail_redirect(
+            repo,
+            number,
+            [
+                "this issue does not use the redirect template. "
+                "Please open a new one via the 'Subdomain redirect' template."
+            ],
+            token,
+        )
+        return
+
+    domain = resolve_base_domain(sections[LABEL_BASE])
+    stem = normalize_subdomain(sections[LABEL_SUBDOMAIN], domain)
+    destination = clean(sections[REDIRECT_DESTINATION])
+    redirect_type_raw = clean(sections[REDIRECT_TYPE])
+    terms_ok = checkbox_checked(sections[LABEL_TERMS])
+
+    status_code = "301" if "301" in redirect_type_raw else "302"
+
+    errors = []
+
+    if domain is None:
+        errors.append(
+            f"'{clean(sections[LABEL_BASE])}' is not a base domain managed here; "
+            f"pick one from the dropdown: {', '.join(v.ZONES)}"
+        )
+    if not stem:
+        errors.append("subdomain is empty")
+    if not terms_ok:
+        errors.append("you must accept the terms to create a redirect")
+
+    if destination:
+        parsed = urllib.parse.urlparse(destination)
+        if not parsed.scheme or not parsed.hostname:
+            errors.append("destination must be a full URL (e.g. https://example.com)")
+        elif parsed.scheme not in ("http", "https"):
+            errors.append("destination must use http:// or https://")
+
+    name_errors = v.validate_name(stem) if stem else ["subdomain is empty"]
+    errors.extend(name_errors)
+
+    user_status, user_data = v.api_request(f"{GITHUB_API}/users/{author}", token=token)
+    ghid = user_data.get("id", 0) if user_status == 200 and user_data else 0
+    if not ghid:
+        errors.append("could not verify your GitHub account; try again later")
+
+    path = f"{v.DOMAINS_DIR}/{domain}/{stem}.json" if stem and domain else None
+    remote = None
+    if stem and domain:
+        remote = fetch_remote_file(repo, path, token)
+        if remote:
+            errors.append(
+                f"{stem}.{domain} already exists — delete it first or choose another name"
+            )
+        previous_owner = None
+        if remote:
+            previous_owner = v.parse_owner(remote["content"])
+            if previous_owner and previous_owner.lower() != author.lower():
+                errors.append(f"you do not own {stem}.{domain}")
+
+    if errors:
+        fail_redirect(repo, number, errors, token)
+        return
+
+    cfg = {
+        "owner": {
+            "github": author,
+            "github_id": ghid,
+        },
+        "redirect_to": destination,
+        "redirect_status": status_code,
+    }
+
+    fqdn = f"{stem}.{domain}"
+    pretty = json.dumps(cfg, indent=2, ensure_ascii=False) + "\n"
+    encoded = base64.b64encode(pretty.encode()).decode()
+
+    status, _ = v.api_request(
+        f"{GITHUB_API}/repos/{repo}/contents/{path}",
+        token=token,
+        method="PUT",
+        body={
+            "message": f"redirect({author}): {stem}.{domain} → {destination}",
+            "content": encoded,
+        },
+    )
+    if status not in (200, 201):
+        fail_redirect(
+            repo,
+            number,
+            [f"could not write the configuration (HTTP {status}); try again."],
+            token,
+        )
+        return
+
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(pretty)
+
+    success_text = (
+        "<!-- oxyd-issue-bot -->\n"
+        f"## ✅ Redirect created\n\n"
+        f"Hey @{author}, your redirect is configured:\n\n"
+        f"- 🌐 **{fqdn}** → `{destination}`\n"
+        f"- 📋 Type: {status_code} {'(permanent)' if status_code == '301' else '(temporary)'}\n\n"
+        f"DNS changes will propagate within ~15 minutes. "
+        f"This issue is now closed — open a new 'Subdomain redirect' issue to modify it later."
+    )
+    finish_issue(repo, number, True, success_text, "redirect-created", token)
+    print(success_text.replace("**", ""))
+    print(f"\nIssue #{number} processed: redirect {fqdn} → {destination}")
+
+    print("\nSyncing DNS…")
+    try:
+        udn.main(zone_filter=domain)
+    except SystemExit as e:
+        print(f"warning: DNS sync exited with code {e}", file=sys.stderr)
+    except Exception as e:
+        print(f"warning: DNS sync failed: {e}", file=sys.stderr)
+        post_comment(
+            repo,
+            number,
+            "⚠️ The configuration was committed but the DNS sync failed. "
+            "A maintainer can re-run the **Update DNS** workflow.",
+            token,
+        )
+
+
+def fail_redirect(repo, number, messages, token):
+    listing = "\n".join(f"- ❌ {m}" for m in messages)
+    text = (
+        "<!-- oxyd-issue-bot -->\n## ❌ Redirect rejected\n\n"
+        f"{listing}\n\nFix the issues above and open a new request."
+    )
+    finish_issue(repo, number, False, text, "invalid", token)
+    print(text.replace("<br>", "\n"))
+    print("\nIssue closed as invalid.")
+
+
 def main():
     event_path = os.environ.get("GITHUB_EVENT_PATH")
     token = os.environ.get("GITHUB_TOKEN")
@@ -173,11 +366,18 @@ def main():
     title = issue.get("title", "")
     body = issue.get("body") or ""
 
-    if not title.startswith(TITLE_PREFIX):
-        print(f"Issue title does not start with '{TITLE_PREFIX}', skipping.")
-        return
     if not repo or not token:
         raise RuntimeError("GITHUB_TOKEN / GITHUB_REPOSITORY are required")
+
+    if title.startswith(TITLE_PREFIX_REDIRECT):
+        process_redirect_issue(issue, token, repo)
+        return
+
+    if not title.startswith(TITLE_PREFIX_REG):
+        print(
+            f"Issue title does not start with '{TITLE_PREFIX_REG}' or '{TITLE_PREFIX_REDIRECT}', skipping."
+        )
+        return
 
     def fail(messages):
         listing = "\n".join(f"- ❌ {m}" for m in messages)
