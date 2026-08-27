@@ -10,5 +10,10 @@ export default defineConfig({
   },
   outDir: '../dist',
   publicDir: './public',
-  srcDir: './src'
+  srcDir: './src',
+  vite: {
+    build: {
+      assetsDir: 'assets'
+    }
+  }
 });
