@@ -46,7 +46,7 @@ jobs:
           mkdir -p /tmp/live
           cd /tmp/live
           git init
-          git remote add origin https://github.com/YoannDev90/oxyd.space.git
+          git remote add origin https://x-access-token:${{ github.token }}@github.com/YoannDev90/oxyd.space.git
           git fetch origin live --depth=1
           git checkout live
 
