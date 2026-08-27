@@ -38,28 +38,15 @@ jobs:
         working-directory: website
 
       - name: Deploy to live branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          cd dist
+          touch .nojekyll
+          git init
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Clone live branch into a temp directory
-          mkdir -p /tmp/live
-          cd /tmp/live
-          git init
-          git remote add origin https://x-access-token:${{ github.token }}@github.com/YoannDev90/oxyd.space.git
-          git fetch origin live --depth=1
-          git checkout live
-
-          # Clean everything
-          git rm -rf .
-
-          # Copy new build (including hidden files like .nojekyll)
-          cp -a $GITHUB_WORKSPACE/dist/. .
-
-          # Ensure .nojekyll exists (GitHub Pages skips _ prefixed dirs without it)
-          touch .nojekyll
-
-          # Add and commit
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/YoannDev90/oxyd.space.git"
           git add -A
           git commit -m "deploy: update site from main" || echo "No changes to commit"
-          git push --force origin HEAD:live
+          git push --force origin HEAD:refs/heads/live
