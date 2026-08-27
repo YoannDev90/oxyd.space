@@ -56,6 +56,9 @@ jobs:
           # Copy new build (including hidden files like .nojekyll)
           cp -a $GITHUB_WORKSPACE/dist/. .
 
+          # Ensure .nojekyll exists (GitHub Pages skips _ prefixed dirs without it)
+          touch .nojekyll
+
           # Add and commit
           git add -A
           git commit -m "deploy: update site from main" || echo "No changes to commit"
