@@ -40,7 +40,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout --orphan live-tmp
-          git reset
+          git rm -rf --cached . 2>/dev/null || true
+          rm -rf .gitignore .github _site .jekyll-cache .pre-commit-config.yaml .ruff_cache .sops.yaml config docs domains key.txt LICENSE llms.txt MAINTAINER.md mise.toml README.md ruff.toml scripts tests TODO.md website
           git add -f dist/
           git mv dist/* .
           rmdir dist
