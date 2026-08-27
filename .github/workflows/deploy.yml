@@ -20,6 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: actions/setup-node@v4
         with:
@@ -39,12 +41,22 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout --orphan live-tmp
-          git rm -rf --cached . 2>/dev/null || true
-          rm -rf .gitignore .github _site .jekyll-cache .pre-commit-config.yaml .ruff_cache .sops.yaml config docs domains key.txt LICENSE llms.txt MAINTAINER.md mise.toml README.md ruff.toml scripts tests TODO.md website
-          git add -f dist/
-          git mv dist/* .
-          rmdir dist
+
+          # Clone live branch into a temp directory
+          mkdir -p /tmp/live
+          cd /tmp/live
+          git init
+          git remote add origin https://github.com/YoannDev90/oxyd.space.git
+          git fetch origin live --depth=1
+          git checkout live
+
+          # Clean everything
+          git rm -rf .
+
+          # Copy new build
+          cp -r $GITHUB_WORKSPACE/dist/* .
+
+          # Add and commit
+          git add -A
           git commit -m "deploy: update site from main" || echo "No changes to commit"
           git push --force origin HEAD:live
-          git checkout -f main
