@@ -6,5 +6,7 @@
   "propagation": "DNS Propagation",
   "propagation.desc": "Check DNS propagation across 32 global servers.",
   "changelog": "Changelog",
-  "changelog.desc": "Track every update and improvement on oxyd.space."
+  "changelog.desc": "Track every update and improvement on oxyd.space.",
+  "dashboard": "Personal Dashboard",
+  "dashboard.desc": "Manage your subdomains from one place."
 }
