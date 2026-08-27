@@ -1,0 +1,49 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Free subdomains for everyone. Claim yourname.oxyd.space through a GitHub issue form.' } = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{title} — oxyd.space</title>
+  <meta name="description" content={description}>
+  <link rel="icon" href="/favicon.png" type="image/png">
+  <link rel="stylesheet" href="/styles/global.css">
+</head>
+<body>
+  <nav>
+    <div class="container nav-inner">
+      <a class="logo" href="/">
+        <img src="/logo.svg" alt="" width="26" height="26" style="display:block">
+        oxyd<span style="color:var(--muted)">·space</span>
+      </a>
+      <div class="nav-links">
+        <a href="/tools">Tools</a>
+        <a href="/dashboard">Dashboard</a>
+        <a href="https://github.com/YoannDev90/oxyd.space">GitHub</a>
+        <a href="https://status.oxyd.space">Status</a>
+        <button class="lang-btn" id="langBtn" aria-label="Switch language">FR</button>
+      </div>
+    </div>
+  </nav>
+
+  <slot />
+
+  <footer>
+    <div class="container footer-inner">
+      <span>Open source under MIT.</span>
+      <span>
+        <a href="https://github.com/YoannDev90/oxyd.space">Repository</a> ·
+        <a href="https://status.oxyd.space">Status</a>
+      </span>
+    </div>
+  </footer>
+</body>
+</html>

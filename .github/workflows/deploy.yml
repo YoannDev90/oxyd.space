@@ -21,19 +21,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Clean workspace
-        run: find . -maxdepth 1 ! -name '.git' ! -name 'website' ! -name 'docs' ! -name '.' -exec rm -rf {} +
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: website/package-lock.json
 
-      - name: Copy website to root
-        run: |
-          cp -r website/* .
-          rm -rf website
+      - name: Install dependencies
+        run: npm ci
+        working-directory: website
+
+      - name: Build Astro
+        run: npm run build
+        working-directory: website
 
       - name: Deploy to live branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git reset HEAD
-          git add -- _config.yml assets/ docs/ CNAME index.html 404.html robots.txt sitemap.xml checker.html propagation.html tools.html changelog.html dashboard.html
+          git checkout --orphan live-tmp
+          git reset
+          git add -A dist/
+          git mv dist/* .
+          rmdir dist
           git commit -m "deploy: update site from main" || echo "No changes to commit"
           git push --force origin HEAD:live
+          git checkout main

@@ -7,7 +7,7 @@ key.txt
 *.agekey
 age-*.txt
 
-# Jekyll build
+# Jekyll build (legacy)
 _site/
 .jekyll-cache/
 .jekyll-metadata
@@ -23,6 +23,10 @@ Gemfile.lock
 
 # Node
 node_modules/
+
+# Astro
+.astro/
+dist/
 
 # OS
 .DS_Store

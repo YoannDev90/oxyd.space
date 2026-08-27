@@ -1,0 +1,108 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Availability Checker" description="Check if a subdomain is available on oxyd.space before registering.">
+  <main class="container" style="padding-top: 60px; padding-bottom: 60px;">
+    <h1 style="font-size: clamp(32px, 5vw, 48px); font-weight: 800; letter-spacing: -.03em; margin-bottom: 12px;">Availability Checker</h1>
+    <p style="color: var(--muted); font-size: 17px; margin-bottom: 32px;">Check if a subdomain is free before registering it.</p>
+
+    <div style="background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 24px; max-width: 500px;">
+      <label style="display: block; font-family: var(--mono); font-size: 12px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .06em;">Subdomain name</label>
+      <div style="display: flex; gap: 8px;">
+        <div style="flex: 1; display: flex; align-items: center; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 0 14px;">
+          <input type="text" id="domainInput" placeholder="yourname" autocomplete="off" spellcheck="false"
+            style="flex: 1; background: none; border: none; color: var(--text); font-family: var(--mono); font-size: 14px; padding: 10px 0; outline: none;">
+          <span style="color: var(--muted); font-family: var(--mono); font-size: 14px;">.oxyd.space</span>
+        </div>
+        <button id="go" class="btn-big" style="padding: 10px 24px;">Check</button>
+      </div>
+      <div id="result" style="margin-top: 16px; font-size: 14px;"></div>
+    </div>
+
+    <div style="max-width: 500px; margin-top: 40px;">
+      <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 16px;">Naming rules</h2>
+      <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px; color: var(--muted); font-size: 14px;">
+        <li>1–4 labels separated by dots (e.g. <code style="color: var(--accent);">api.myname</code>)</li>
+        <li>Lowercase a–z, digits 0–9, hyphens (no leading/trailing hyphen)</li>
+        <li>63 characters per label</li>
+        <li>Some names are reserved (www, root, ns, api…)</li>
+      </ul>
+    </div>
+
+    <div style="max-width: 500px; margin-top: 32px;">
+      <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 16px;">Supported record types</h2>
+      <div class="records">
+        <span class="record-chip"><em>CNAME</em> websites &amp; hosting</span>
+        <span class="record-chip"><em>A</em> servers &amp; IPv4</span>
+        <span class="record-chip"><em>AAAA</em> servers &amp; IPv6</span>
+        <span class="record-chip"><em>TXT</em> verifications</span>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  const GITHUB_REPO = 'YoannDev90/oxyd.space';
+  const LANDING_ZONE = 'oxyd.space';
+  const MAX_LABELS = 4;
+  const LABEL_RE = /^(?!-)[a-z0-9-]{1,63}(?<!-)$/;
+
+  let reservedSet = new Set();
+  let takenCache = null;
+
+  fetch('https://raw.githubusercontent.com/' + GITHUB_REPO + '/main/config/reserved_names.txt')
+    .then(r => r.ok ? r.text() : '')
+    .then(txt => {
+      txt.split('\n').forEach(l => {
+        const name = l.trim().toLowerCase();
+        if (name && !name.startsWith('#')) reservedSet.add(name);
+      });
+    }).catch(() => {});
+
+  async function loadTaken() {
+    if (takenCache && Date.now() - takenCache.ts < 300000) return takenCache.names;
+    const r = await fetch('https://api.github.com/repos/' + GITHUB_REPO + '/contents/domains/' + LANDING_ZONE);
+    if (!r.ok) throw new Error('api');
+    const j = await r.json();
+    const names = (Array.isArray(j) ? j : []).filter(f => f.name.endsWith('.json')).map(f => f.name.slice(0, -5));
+    takenCache = { names: new Set(names), ts: Date.now() };
+    return takenCache.names;
+  }
+
+  function isValidName(raw) {
+    const labels = raw.split('.');
+    return labels.length >= 1 && labels.length <= MAX_LABELS && labels.every(l => LABEL_RE.test(l) && !l.startsWith('xn--'));
+  }
+
+  async function check() {
+    const raw = document.getElementById('domainInput').value.trim().toLowerCase()
+      .replace(/\.oxyd\.space$/, '').replace(/^https?:\/\//, '');
+    const resultEl = document.getElementById('result');
+
+    if (!raw) { resultEl.innerHTML = '<span style="color: var(--muted)">Type a name to see if it\'s free.</span>'; return; }
+    if (!isValidName(raw)) { resultEl.innerHTML = '<span style="color: var(--bad)">Invalid name. Use a-z, 0-9 and hyphens (up to 4 labels).</span>'; return; }
+
+    const lastLabel = raw.split('.').pop();
+    if (reservedSet.has(lastLabel)) {
+      resultEl.innerHTML = '<span style="color: var(--bad)">' + lastLabel + ' is reserved. Put it first, e.g. ' + lastLabel + 'yourname</span>';
+      return;
+    }
+
+    resultEl.innerHTML = '<span style="color: var(--muted)">Checking…</span>';
+    try {
+      const names = await loadTaken();
+      if (names.has(raw)) {
+        resultEl.innerHTML = '<span style="color: var(--bad)">' + raw + '.oxyd.space is already taken.</span>';
+      } else {
+        resultEl.innerHTML = '<span style="color: var(--ok)">' + raw + '.oxyd.space is available!</span> <a href="https://github.com/YoannDev90/oxyd.space/issues/new?template=register.yml&subdomain=' + encodeURIComponent(raw) + '" style="margin-left: 8px;">Register →</a>';
+      }
+    } catch(e) {
+      resultEl.innerHTML = '<span style="color: var(--bad)">Could not check right now. Try again later.</span>';
+    }
+  }
+
+  document.getElementById('go').addEventListener('click', check);
+  document.getElementById('domainInput').addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+  document.getElementById('domainInput').focus();
+</script>

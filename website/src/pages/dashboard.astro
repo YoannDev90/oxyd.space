@@ -1,0 +1,224 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Dashboard" description="Sign in with GitHub to manage your oxyd.space subdomains.">
+  <main class="container" style="padding-top: 40px; padding-bottom: 60px;">
+    <div id="login-screen">
+      <div style="text-align: center; padding: 60px 0 40px;">
+        <h1 style="font-size: clamp(32px, 5vw, 48px); font-weight: 800; letter-spacing: -.03em; margin-bottom: 12px;">My Dashboard</h1>
+        <p style="color: var(--muted); font-size: 18px; margin-bottom: 28px;">Sign in with GitHub to manage your subdomains.</p>
+        <button id="loginBtn" class="btn-big">Sign in with GitHub</button>
+        <p style="color: var(--muted); font-size: 12.5px; margin-top: 16px;">Requires access to public repos only. No permissions to modify your code.</p>
+      </div>
+
+      <section style="padding: 40px 0;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 900px; margin: 0 auto;">
+          <div style="text-align: center; padding: 32px 24px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px;">
+            <div style="font-size: 32px; margin-bottom: 16px;">🎯</div>
+            <h3 style="font-size: 17px; font-weight: 700; margin-bottom: 8px;">Manage subdomains</h3>
+            <p style="color: var(--muted); font-size: 14px;">View all your registered subdomains in one place.</p>
+          </div>
+          <div style="text-align: center; padding: 32px 24px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px;">
+            <div style="font-size: 32px; margin-bottom: 16px;">⚡</div>
+            <h3 style="font-size: 17px; font-weight: 700; margin-bottom: 8px;">Quick registration</h3>
+            <p style="color: var(--muted); font-size: 14px;">Register new subdomains directly from the dashboard.</p>
+          </div>
+          <div style="text-align: center; padding: 32px 24px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px;">
+            <div style="font-size: 32px; margin-bottom: 16px;">📊</div>
+            <h3 style="font-size: 17px; font-weight: 700; margin-bottom: 8px;">Track progress</h3>
+            <p style="color: var(--muted); font-size: 14px;">Follow your registration requests from creation to completion.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div id="dashboard-screen" style="display: none;">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 32px 0 24px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <img id="userAvatar" width="36" height="36" alt="" style="border-radius: 50%; border: 2px solid var(--line);">
+          <div>
+            <span id="userName" style="font-family: var(--mono); font-size: 16px; font-weight: 700; display: block;"></span>
+            <span id="userEmail" style="font-size: 13px; color: var(--muted); display: none;"></span>
+          </div>
+        </div>
+        <button id="logoutBtn" class="lang-btn">Sign out</button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 540px; margin-bottom: 32px;">
+        <div class="stat"><b id="subdomainCount">0</b><span>subdomains</span></div>
+        <div class="stat"><b id="openIssueCount">0</b><span>open issues</span></div>
+        <div class="stat"><b id="limitCount">0/10</b><span>registered</span></div>
+      </div>
+
+      <button id="registerBtn" class="btn-big" style="display: block; width: 100%; max-width: 400px; margin: 0 auto 40px; text-align: center;">+ Register new subdomain</button>
+
+      <section>
+        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 16px;">My subdomains</h2>
+        <div id="subdomainList"></div>
+      </section>
+
+      <section style="margin-top: 40px;">
+        <h2 style="font-size: 20px; font-weight: 800; margin-bottom: 16px;">Pending requests</h2>
+        <div id="issueList"></div>
+      </section>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { createClient } from '@supabase/supabase-js';
+
+  const SUPABASE_URL = 'https://dqguiuyyhjqrrscncnnr.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_aoaeIJ3lLeLohAXKcTeYxw_VOjD3Vxt';
+  const GITHUB_REPO = 'YoannDev90/oxyd.space';
+  const TOKEN_KEY = 'oxyd-gh-token';
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  function getToken() { return localStorage.getItem(TOKEN_KEY); }
+  function setToken(t) { localStorage.setItem(TOKEN_KEY, t); }
+  function clearToken() { localStorage.removeItem(TOKEN_KEY); }
+
+  async function getUser(token) {
+    const r = await fetch('https://api.github.com/user', {
+      headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json' }
+    });
+    if (!r.ok) return null;
+    return r.json();
+  }
+
+  async function loadMySubdomains(token, login) {
+    const r = await fetch('https://api.github.com/repos/' + GITHUB_REPO + '/contents/domains', {
+      headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json' }
+    });
+    if (!r.ok) return [];
+    const zones = await r.json();
+    const results = [];
+    for (const zone of zones) {
+      if (zone.type !== 'dir' || zone.name.startsWith('_')) continue;
+      const fr = await fetch('https://api.github.com/repos/' + GITHUB_REPO + '/contents/domains/' + zone.name, {
+        headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json' }
+      });
+      if (!fr.ok) continue;
+      const files = await fr.json();
+      for (const file of files) {
+        if (!file.name.endsWith('.json') || file.name.startsWith('_')) continue;
+        const cr = await fetch(file.url, { headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json' } });
+        if (!cr.ok) continue;
+        const cd = await cr.json();
+        const config = JSON.parse(atob(cd.content));
+        if (config.owner?.github?.toLowerCase() === login.toLowerCase()) {
+          results.push({ zone: zone.name, name: file.name.replace('.json', ''), config });
+        }
+      }
+    }
+    return results;
+  }
+
+  async function loadMyIssues(token, login) {
+    const r = await fetch('https://api.github.com/repos/' + GITHUB_REPO + '/issues?labels=registration&state=all&per_page=50', {
+      headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json' }
+    });
+    if (!r.ok) return [];
+    const issues = await r.json();
+    return issues.filter(i => i.user?.login === login);
+  }
+
+  function renderSubdomains(subs) {
+    const el = document.getElementById('subdomainList');
+    if (!subs.length) { el.innerHTML = '<p style="color: var(--muted); text-align: center; padding: 32px 0;">No subdomains yet. Register your first one!</p>'; return; }
+    el.innerHTML = subs.map(s => {
+      const fqdn = s.name + '.' + s.zone;
+      const records = (s.config.records || []).map(r => `<span class="record-chip"><em>${r.type}</em> ${r.value}</span>`).join('');
+      return `<div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 24px; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <h3 style="font-family: var(--mono); font-size: 16px; font-weight: 700;">${fqdn}</h3>
+          <span style="font-family: var(--mono); font-size: 12px; color: var(--muted);">Owner: @${s.config.owner?.github || '—'}</span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">${records}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function renderIssues(issues) {
+    const el = document.getElementById('issueList');
+    if (!issues.length) { el.innerHTML = '<p style="color: var(--muted); text-align: center; padding: 32px 0;">No registration requests yet.</p>'; return; }
+    el.innerHTML = issues.slice(0, 10).map(i => {
+      const badge = i.state === 'open' ? 'color: var(--ok); background: rgba(52,211,153,.12); border: 1px solid rgba(52,211,153,.3);' : 'color: var(--muted); background: var(--panel-2); border: 1px solid var(--line);';
+      return `<div style="background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; margin-bottom: 8px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <a href="${i.html_url}" target="_blank" style="font-family: var(--mono); font-size: 14px; font-weight: 700;">#${i.number}</a>
+          <span style="font-family: var(--mono); font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px; text-transform: uppercase; letter-spacing: .06em; ${badge}">${i.state}</span>
+        </div>
+        <p style="font-size: 14px; margin: 8px 0 4px;">${i.title}</p>
+        <time style="font-family: var(--mono); font-size: 12px; color: var(--muted);">${new Date(i.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</time>
+      </div>`;
+    }).join('');
+  }
+
+  // Boot
+  async function boot() {
+    // Handle OAuth redirect
+    const url = new URL(window.location);
+    const code = url.searchParams.get('code');
+    if (code) {
+      url.searchParams.delete('code');
+      window.history.replaceState({}, '', url);
+    }
+
+    let token = getToken();
+    if (!token && code) {
+      // Exchange code via Supabase
+      const { data } = await supabase.auth.getSession();
+      if (data.session?.provider_token) {
+        token = data.session.provider_token;
+        setToken(token);
+      }
+    }
+
+    if (token) {
+      const user = await getUser(token);
+      if (user) {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('dashboard-screen').style.display = 'block';
+        document.getElementById('userAvatar').src = user.avatar_url;
+        document.getElementById('userName').textContent = user.login;
+
+        const session = await supabase.auth.getSession();
+        const email = session.data.session?.user?.email;
+        if (email) {
+          document.getElementById('userEmail').textContent = email;
+          document.getElementById('userEmail').style.display = 'block';
+        }
+
+        const [subs, issues] = await Promise.all([loadMySubdomains(token, user.login), loadMyIssues(token, user.login)]);
+        document.getElementById('subdomainCount').textContent = subs.length;
+        document.getElementById('openIssueCount').textContent = issues.filter(i => i.state === 'open').length;
+        document.getElementById('limitCount').textContent = subs.length + '/10';
+        renderSubdomains(subs);
+        renderIssues(issues);
+        return;
+      }
+      clearToken();
+    }
+
+    document.getElementById('login-screen').style.display = 'block';
+    document.getElementById('dashboard-screen').style.display = 'none';
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: { redirectTo: window.location.origin + '/dashboard', scopes: 'public_repo user:email' }
+    });
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    clearToken();
+    window.location.reload();
+  });
+
+  boot();
+</script>

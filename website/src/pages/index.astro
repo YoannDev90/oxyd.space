@@ -1,0 +1,162 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="oxyd.space — free subdomains for everyone">
+  <header class="hero container">
+    <div class="badge"><span class="pulse"></span>free forever · open source · no ads</div>
+    <h1>Claim your corner of<br><span class="brand">oxyd.space</span></h1>
+    <p class="subtitle">Get a free subdomain for your personal site, portfolio or project. One issue form, zero dollars, live in minutes.</p>
+
+    <div class="stats">
+      <div class="stat"><b id="statClaimed">—</b><span>subdomains claimed</span></div>
+      <div class="stat"><b>$0</b><span>price / year</span></div>
+      <div class="stat"><b>~5 min</b><span>to go live</span></div>
+    </div>
+  </header>
+
+  <main>
+    <section id="how">
+      <div class="container">
+        <h2 class="section-title">How it works</h2>
+        <p class="section-sub">Fully automated. No accounts, no waiting lists.</p>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">01</div>
+            <h3>Fill in the issue form</h3>
+            <p>Open a pre-filled issue on GitHub: pick a name, a record type and its target. Takes one minute.</p>
+          </div>
+          <div class="step">
+            <div class="step-num">02</div>
+            <h3>The bot takes over</h3>
+            <p>Your GitHub identity is verified (user ID), rules enforced, config committed automatically.</p>
+          </div>
+          <div class="step">
+            <div class="step-num">03</div>
+            <h3>Registered &amp; live</h3>
+            <p>DNS records are published right away — usually resolving worldwide within five minutes.</p>
+          </div>
+        </div>
+
+        <div class="snippet">
+          <div class="snippet-head">
+            <span>domains/your.name.json · generated from your issue</span>
+            <button class="copy-btn" id="copyBtn">Copy</button>
+          </div>
+          <pre><code id="snippetCode"></code></pre>
+        </div>
+
+        <div class="records">
+          <span class="record-chip"><em>CNAME</em> websites &amp; hosting</span>
+          <span class="record-chip"><em>A / AAAA</em> servers &amp; IPv6</span>
+          <span class="record-chip"><em>TXT</em> verifications</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="tools">
+      <div class="container">
+        <h2 class="section-title">Tools</h2>
+        <p class="section-sub">Utilities to help you manage and monitor your subdomains.</p>
+        <div class="tools-grid">
+          <a href="/checker" class="tool-card">
+            <div class="tool-icon">🔍</div>
+            <h3>Availability Checker</h3>
+            <p>Check if a subdomain is free before registering.</p>
+          </a>
+          <a href="/propagation" class="tool-card">
+            <div class="tool-icon">🌐</div>
+            <h3>DNS Propagation</h3>
+            <p>Check DNS propagation across 32 global servers.</p>
+          </a>
+          <a href="/changelog" class="tool-card">
+            <div class="tool-icon">📋</div>
+            <h3>Changelog</h3>
+            <p>Track every update and improvement on oxyd.space.</p>
+          </a>
+          <a href="/dashboard" class="tool-card">
+            <div class="tool-icon">👤</div>
+            <h3>Personal Dashboard</h3>
+            <p>Manage your subdomains from one place.</p>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq">
+      <div class="container">
+        <h2 class="section-title">FAQ</h2>
+        <div class="faq-list">
+          <details class="faq-item">
+            <summary>Is it really free?</summary>
+            <p>Yes. The domain costs a coffee per year to maintain and the whole stack runs on free tiers (GitHub Pages + deSEC). No ads, no tracking, MIT licensed.</p>
+          </details>
+          <details class="faq-item">
+            <summary>What can I use it for?</summary>
+            <p>Personal sites, portfolios, open-source docs, homelab… anything lawful. Subdomains used for phishing, malware or abuse are removed without notice.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Which DNS records are supported?</summary>
+            <p>Up to 4 levels (e.g. s1.service.yourname.oxyd.space) with CNAME, A, AAAA and TXT records, plus an optional automatic www. prefix. MX and NS delegation are not available yet.</p>
+          </details>
+          <details class="faq-item">
+            <summary>How fast does it go live?</summary>
+            <p>Validation takes seconds. After merge, DNS is published automatically and usually resolves worldwide within ~5 minutes.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Does it work with GitHub Pages, Vercel, Netlify…?</summary>
+            <p>Yes. Point a CNAME record at your host target. A full GitHub Pages guide is in the README.</p>
+          </details>
+          <details class="faq-item">
+            <summary>Can I update or delete my subdomain later?</summary>
+            <p>Yes — open a new issue and choose "Update my records" or "Delete my subdomain". Ownership is tied to your GitHub account.</p>
+          </details>
+          <details class="faq-item">
+            <summary>What happens when the domain expires?</summary>
+            <p>oxyd.space is registered one year at a time. A month before expiry, the project moves to a cheaper successor domain — all existing subdomains are migrated automatically and old names will permanently redirect to their new address.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="cta-band">
+        <h2>Ready to claim yours?</h2>
+        <p>It takes about five minutes and costs nothing. Forever.</p>
+        <a class="btn-big" href="https://github.com/YoannDev90/oxyd.space/issues/new?template=register.yml&request-type=Register+a+new+subdomain">Register now on GitHub</a>
+        <p class="cta-note">Heads-up: <code>oxyd.space</code> is registered for <strong>one year</strong>. One month before it expires, the project moves to a cheaper domain — every subdomain will be migrated automatically, and old names will permanently redirect to their new address.</p>
+      </div>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  const TEMPLATE = { owner:{ github:'your-github-username', github_id:12345678 }, records:[ { type:'CNAME', value:'your-github-username.github.io' } ], www:false };
+
+  function highlight(json) {
+    return json
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/&quot;/g, '"')
+      .replace(/"([^"]+)":/g, '<span style="color:#22d3ee">"$1"</span>:')
+      .replace(/: "([^"]*)"/g, ': <span style="color:#34d399">"$1"</span>');
+  }
+
+  document.getElementById('snippetCode').innerHTML = highlight(JSON.stringify(TEMPLATE, null, 2));
+
+  document.getElementById('copyBtn')?.addEventListener('click', () => {
+    navigator.clipboard.writeText(JSON.stringify(TEMPLATE, null, 2)).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 1600);
+    });
+  });
+
+  // Fetch claimed count
+  fetch('https://api.github.com/repos/YoannDev90/oxyd.space/contents/domains/oxyd.space')
+    .then(r => r.json())
+    .then(files => {
+      const names = (Array.isArray(files) ? files : []).filter(f => f.name.endsWith('.json')).map(f => f.name.slice(0, -5));
+      document.getElementById('statClaimed').textContent = names.length;
+    })
+    .catch(() => {});
+</script>
