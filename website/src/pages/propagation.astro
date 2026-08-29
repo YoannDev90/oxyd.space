@@ -1,8 +1,34 @@
 ---
+import fs from 'node:fs';
+import nodePath from 'node:path';
+import * as d3 from 'd3';
+import * as topojson from 'topojson-client';
 import Layout from '../layouts/Layout.astro';
+
+const root = process.cwd();
+const dnsJson = JSON.parse(fs.readFileSync(nodePath.join(root, 'public/assets/dns.json'), 'utf8'));
+const world = JSON.parse(
+  fs.readFileSync(nodePath.join(root, 'public/assets/countries-110m.json'), 'utf8'),
+);
+
+const W = 960;
+const H = 500;
+const proj = d3.geoNaturalEarth1().scale(153).translate([W / 2, H / 2]).precision(0.1);
+const path = d3.geoPath(proj);
+
+const landPath = path(topojson.feature(world, world.objects.land));
+const borderPath = path(topojson.mesh(world, world.objects.countries, (a, b) => a !== b));
+
+const dots = dnsJson.map((s) => {
+  const p = proj([s.lng, s.lat]);
+  return { ...s, x: Math.round(p[0] * 10) / 10, y: Math.round(p[1] * 10) / 10 };
+});
 ---
 
-<Layout title="DNS Propagation Checker" description="Check DNS propagation across 600+ global DNS servers. Free, no auth, instant results.">
+<Layout
+  title="DNS Propagation Checker"
+  description="Check DNS propagation across 600+ global DNS servers. Free, no auth, instant results."
+>
   <style is:global>
     .tool {
       margin: 48px auto 20px;
@@ -10,7 +36,7 @@ import Layout from '../layouts/Layout.astro';
     .tool h1 {
       font-size: clamp(32px, 5vw, 44px);
       font-weight: 800;
-      letter-spacing: -.03em;
+      letter-spacing: -0.03em;
       margin-bottom: 10px;
     }
     .tool .sub {
@@ -39,21 +65,48 @@ import Layout from '../layouts/Layout.astro';
       z-index: 5;
       font-size: 11px;
       color: var(--muted);
-      opacity: .6;
+      opacity: 0.6;
       pointer-events: none;
       font-family: var(--mono);
-      background: rgba(5, 8, 12, .7);
+      background: rgba(5, 8, 12, 0.7);
       padding: 4px 8px;
       border-radius: 6px;
     }
-    #map { width: 100%; display: block; cursor: grab; }
-    #map:active { cursor: grabbing; }
-    #map .land { fill: #0c1520; stroke: #1e2d40; stroke-width: .4; }
-    #map .border { fill: none; stroke: #1a2838; stroke-width: .25; }
-    #map .graticule { fill: none; stroke: #0d1622; stroke-width: .35; }
-    #map .sphere { fill: none; stroke: #182231; stroke-width: .6; }
-    .srv-dot { cursor: pointer; }
-    .srv-dot:hover { r: 6; }
+    #map {
+      width: 100%;
+      display: block;
+      cursor: grab;
+      touch-action: none;
+    }
+    #map:active {
+      cursor: grabbing;
+    }
+    #map .land {
+      fill: #0c1520;
+      stroke: #1e2d40;
+      stroke-width: 0.4;
+    }
+    #map .border {
+      fill: none;
+      stroke: #1a2838;
+      stroke-width: 0.25;
+    }
+    #map .graticule {
+      fill: none;
+      stroke: #0d1622;
+      stroke-width: 0.35;
+    }
+    #map .sphere {
+      fill: none;
+      stroke: #182231;
+      stroke-width: 0.6;
+    }
+    .srv-dot {
+      cursor: pointer;
+    }
+    .srv-dot:hover {
+      r: 6;
+    }
 
     .map-legend {
       display: flex;
@@ -64,13 +117,36 @@ import Layout from '../layouts/Layout.astro';
       flex-wrap: wrap;
       align-items: center;
     }
-    .map-legend span { display: flex; align-items: center; gap: 5px; }
-    .map-legend .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .map-legend .dot.pending { background: var(--muted); opacity: .4; }
-    .map-legend .dot.ok { background: var(--ok); }
-    .map-legend .dot.err { background: var(--bad); }
+    .map-legend span {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .map-legend .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .map-legend .dot.pending {
+      background: var(--muted);
+      opacity: 0.4;
+    }
+    .map-legend .dot.ok {
+      background: var(--ok);
+    }
+    .map-legend .dot.empty {
+      background: #fbbf24;
+    }
+    .map-legend .dot.fail {
+      background: var(--bad);
+    }
 
-    .form { display: flex; gap: 10px; flex-wrap: wrap; }
+    .form {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
     .input-wrap {
       flex: 1;
       min-width: 200px;
@@ -80,9 +156,11 @@ import Layout from '../layouts/Layout.astro';
       border: 1px solid var(--line);
       border-radius: 10px;
       overflow: hidden;
-      transition: border-color .15s;
+      transition: border-color 0.15s;
     }
-    .input-wrap:focus-within { border-color: var(--accent); }
+    .input-wrap:focus-within {
+      border-color: var(--accent);
+    }
     .input-wrap input {
       flex: 1;
       min-width: 60px;
@@ -94,7 +172,9 @@ import Layout from '../layouts/Layout.astro';
       font-size: 15px;
       padding: 12px 14px;
     }
-    .input-wrap input::placeholder { color: #4d5f76; }
+    .input-wrap input::placeholder {
+      color: #4d5f76;
+    }
     select {
       background: var(--panel);
       border: 1px solid var(--line);
@@ -105,7 +185,10 @@ import Layout from '../layouts/Layout.astro';
       padding: 12px 14px;
       cursor: pointer;
     }
-    select:focus { outline: none; border-color: var(--accent); }
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
 
     .results-header {
       display: flex;
@@ -114,10 +197,22 @@ import Layout from '../layouts/Layout.astro';
       margin-top: 32px;
       margin-bottom: 16px;
     }
-    .results-header h2 { font-size: 16px; font-weight: 700; color: var(--muted); }
-    .results-header .count { font-family: var(--mono); font-size: 13px; color: var(--muted); }
-    .results-grid { display: flex; flex-direction: column; gap: 6px; }
-    .srv-card {
+    .results-header h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+    .results-header .count {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .results-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .srv {
       display: grid;
       grid-template-columns: 8px 1fr auto;
       gap: 14px;
@@ -128,22 +223,79 @@ import Layout from '../layouts/Layout.astro';
       padding: 12px 16px;
       font-family: var(--mono);
       font-size: 13px;
-      transition: border-color .2s, background .2s;
+      transition: border-color 0.2s, background 0.2s;
     }
-    .srv-card:hover { border-color: #243448; background: var(--panel-2); }
-    .srv-card .dot { width: 8px; height: 8px; border-radius: 50%; }
-    .srv-card .dot.ok { background: var(--ok); }
-    .srv-card .dot.err { background: var(--bad); }
-    .srv-card .info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-    .srv-card .name { font-weight: 600; color: var(--text); font-size: 13px; }
-    .srv-card .region { font-size: 11px; color: var(--muted); }
-    .srv-card .result { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; min-width: 0; }
-    .srv-card .ips { color: var(--muted); font-size: 12px; word-break: break-all; text-align: right; max-width: 280px; }
-    .srv-card .ms { font-size: 12px; color: var(--muted); white-space: nowrap; }
-    .srv-card .ms.fast { color: var(--ok); }
-    .srv-card .ms.slow { color: #fbbf24; }
-    .srv-card.ok { border-left: 2px solid var(--ok); }
-    .srv-card.err { border-left: 2px solid var(--bad); }
+    .srv:hover {
+      border-color: #243448;
+      background: var(--panel-2);
+    }
+    .srv .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .srv .dot.pending {
+      background: var(--muted);
+      opacity: 0.4;
+    }
+    .srv .dot.ok {
+      background: var(--ok);
+    }
+    .srv .dot.empty {
+      background: #fbbf24;
+    }
+    .srv .dot.fail {
+      background: var(--bad);
+    }
+    .srv .info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .srv .name {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 13px;
+    }
+    .srv .region {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .srv .result {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+      min-width: 0;
+    }
+    .srv .ips {
+      color: var(--muted);
+      font-size: 12px;
+      word-break: break-all;
+      text-align: right;
+      max-width: 280px;
+    }
+    .srv .ms {
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .srv .ms.fast {
+      color: var(--ok);
+    }
+    .srv .ms.slow {
+      color: #fbbf24;
+    }
+    .srv.ok {
+      border-left: 2px solid var(--ok);
+    }
+    .srv.empty {
+      border-left: 2px solid #fbbf24;
+    }
+    .srv.fail {
+      border-left: 2px solid var(--bad);
+    }
 
     .summary-bar {
       display: flex;
@@ -159,33 +311,91 @@ import Layout from '../layouts/Layout.astro';
       font-size: 13px;
       flex-wrap: wrap;
     }
-    .summary-bar .count { color: var(--text); font-weight: 600; }
-    .summary-bar .count .ok { color: var(--ok); }
-    .summary-bar .count .err { color: var(--bad); }
-    .summary-bar .elapsed { color: var(--muted); }
-    .progress-bar { flex: 1; height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; min-width: 120px; }
-    .progress-fill { height: 100%; background: linear-gradient(90deg, var(--ok), var(--accent)); border-radius: 2px; transition: width .3s; width: 0%; }
+    .summary-bar .count {
+      color: var(--text);
+      font-weight: 600;
+    }
+    .summary-bar .count .ok {
+      color: var(--ok);
+    }
+    .summary-bar .count .empty {
+      color: #fbbf24;
+    }
+    .summary-bar .count .fail {
+      color: var(--bad);
+    }
+    .summary-bar .elapsed {
+      color: var(--muted);
+    }
+    .progress-bar {
+      flex: 1;
+      height: 4px;
+      background: var(--line);
+      border-radius: 2px;
+      overflow: hidden;
+      min-width: 120px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--ok), var(--accent));
+      border-radius: 2px;
+      transition: width 0.3s;
+      width: 0%;
+    }
   </style>
 
   <main class="container">
     <div class="tool">
       <h1>DNS Propagation Checker</h1>
-      <p class="sub">Query <b id="srvCount">600+</b> global DNS servers simultaneously. Free, no auth, instant results.</p>
+      <p class="sub">
+        Query <b>{dnsJson.length}</b> global DNS servers simultaneously. Free, no auth, instant
+        results.
+      </p>
 
       <div class="map-wrap">
         <div class="map-hint">scroll to zoom · drag to pan</div>
-        <svg id="map" viewBox="0 0 960 500"></svg>
+        <svg id="map" viewBox={`0 0 ${W} ${H}`}>
+          <g id="mapg">
+            <path class="sphere" d={path({ type: 'Sphere' })}></path>
+            <path class="graticule" d={path(d3.geoGraticule().step([30, 30])())}></path>
+            <path class="land" d={landPath}></path>
+            <path class="border" d={borderPath}></path>
+            {
+              dots.map((s) => (
+                <circle
+                  class="srv-dot"
+                  data-ip={s.ip}
+                  cx={s.x}
+                  cy={s.y}
+                  r="3"
+                  fill="#2a3a50"
+                  opacity="0.5"
+                >
+                  <title>{s.label + ' (' + s.city + ', ' + s.country + ')'}</title>
+                </circle>
+              ))
+            }
+          </g>
+        </svg>
         <div class="map-legend">
           <span><span class="dot pending"></span> Pending</span>
           <span><span class="dot ok"></span> Resolved</span>
-          <span><span class="dot err"></span> Failed</span>
+          <span><span class="dot empty"></span> No records</span>
+          <span><span class="dot fail"></span> Failed</span>
         </div>
       </div>
 
       <div class="form">
         <div class="input-wrap">
-          <input id="domain" type="text" autocomplete="off" spellcheck="false" maxlength="253"
-            placeholder="example.com" autofocus>
+          <input
+            id="domain"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            maxlength="253"
+            placeholder="example.com"
+            autofocus
+          />
         </div>
         <select id="rtype">
           <option value="A">A</option>
@@ -201,11 +411,33 @@ import Layout from '../layouts/Layout.astro';
       <div id="resultsArea">
         <div class="results-header" style="display: none;">
           <h2>Results</h2>
-          <span class="count"><b id="doneCount">0</b>/<b id="totalCount">0</b></span>
+          <span class="count"
+            ><b id="doneCount">0</b>/<b id="totalCount">0</b></span
+          >
         </div>
-        <div id="resultsGrid" class="results-grid"></div>
+        <div id="resultsGrid" class="results-grid">
+          {
+            dnsJson.map((s) => (
+              <div class="srv" data-ip={s.ip}>
+                <span class="dot pending"></span>
+                <div class="info">
+                  <span class="name">{s.flag + ' ' + s.label}</span>
+                  <span class="region">{s.city + ', ' + s.country + ' · ' + s.ip}</span>
+                </div>
+                <div class="result">
+                  <span class="ips">—</span>
+                  <span class="ms"></span>
+                </div>
+              </div>
+            ))
+          }
+        </div>
         <div class="summary-bar" style="display: none;">
-          <span class="count"><span class="ok" id="okCount">0</span> ok · <span class="err" id="failCount">0</span> failed</span>
+          <span class="count"
+            ><span class="ok" id="okCount">0</span> ok ·
+            <span class="empty" id="emptyCount">0</span> empty ·
+            <span class="fail" id="failCount">0</span> failed</span
+          >
           <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
           <span class="elapsed" id="elapsed"></span>
         </div>
@@ -214,6 +446,177 @@ import Layout from '../layouts/Layout.astro';
   </main>
 </Layout>
 
-<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js" is:inline></script>
-<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js" is:inline></script>
-<script src="/prop-app.js" is:inline defer></script>
+<script>
+  const API = 'https://dqguiuyyhjqrrscncnnr.supabase.co/functions/v1/dns-propagate';
+  const CHUNK = 200;
+
+  const domainEl = document.getElementById('domain');
+  const rtypeEl = document.getElementById('rtype');
+  const goBtn = document.getElementById('go');
+  const grid = document.getElementById('resultsGrid');
+  const doneEl = document.getElementById('doneCount');
+  const totalEl = document.getElementById('totalCount');
+  const okEl = document.getElementById('okCount');
+  const emptyEl = document.getElementById('emptyCount');
+  const failEl = document.getElementById('failCount');
+  const progressFill = document.getElementById('progressFill');
+  const elapsedEl = document.getElementById('elapsed');
+  const resultsHeader = document.querySelector('.results-header');
+  const summaryBar = document.querySelector('.summary-bar');
+
+  const servers = Array.from(grid.querySelectorAll('.srv')).map((el) => el.dataset.ip);
+  const rowsByIp = new Map();
+  const dotsByIp = new Map();
+
+  grid.querySelectorAll('.srv').forEach((el) => rowsByIp.set(el.dataset.ip, el));
+  document.querySelectorAll('.srv-dot').forEach((el) => dotsByIp.set(el.dataset.ip, el));
+
+  const mapEl = document.getElementById('map');
+  const mapG = document.getElementById('mapg');
+  let k = 1, tx = 0, ty = 0;
+
+  function applyTransform() {
+    mapG.setAttribute('transform', `translate(${tx},${ty}) scale(${k})`);
+    document.querySelectorAll('.srv-dot').forEach((d) => d.setAttribute('r', 3 / k));
+  }
+
+  mapEl.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const rect = mapEl.getBoundingClientRect();
+    const sx = 960 / rect.width, sy = 500 / rect.height;
+    const px = (e.clientX - rect.left) * sx, py = (e.clientY - rect.top) * sy;
+    const k2 = Math.min(12, Math.max(1, k * Math.exp(-e.deltaY * 0.0015)));
+    const f = k2 / k;
+    tx = px - (px - tx) * f;
+    ty = py - (py - ty) * f;
+    k = k2;
+    applyTransform();
+  }, { passive: false });
+
+  let dragging = false, startX = 0, startY = 0, startTx = 0, startTy = 0;
+  mapEl.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    startX = e.clientX; startY = e.clientY; startTx = tx; startTy = ty;
+    mapEl.setPointerCapture(e.pointerId);
+  });
+  mapEl.addEventListener('pointermove', (e) => {
+    if (!dragging) return;
+    tx = startTx + (e.clientX - startX);
+    ty = startTy + (e.clientY - startY);
+    applyTransform();
+  });
+  mapEl.addEventListener('pointerup', () => (dragging = false));
+  mapEl.addEventListener('dblclick', () => {
+    k = 1; tx = 0; ty = 0;
+    applyTransform();
+  });
+
+  function dotEl(ip) {
+    return dotsByIp.get(ip);
+  }
+
+  function statusOf(r) {
+    if (r.ok) return 'ok';
+    if (r.resolveable === false) return 'empty';
+    return 'fail';
+  }
+
+  function setStatus(ip, status, r) {
+    const dot = dotEl(ip);
+    if (dot) {
+      dot.setAttribute('fill', status === 'ok' ? '#34d399' : status === 'empty' ? '#fbbf24' : '#f87171');
+      dot.setAttribute('opacity', '1');
+    }
+    const row = rowsByIp.get(ip);
+    if (!row) return;
+    row.classList.remove('ok', 'empty', 'fail');
+    row.classList.add(status);
+    const dotSpan = row.querySelector('.dot');
+    dotSpan.className = 'dot ' + status;
+    const ips = row.querySelector('.ips');
+    const ms = row.querySelector('.ms');
+    if (r.ok) {
+      let text = (r.answers || []).join(', ');
+      if (text.length > 160) text = text.slice(0, 160) + '…';
+      ips.textContent = text || '—';
+    } else if (status === 'empty') {
+      ips.textContent = 'no records';
+    } else {
+      ips.textContent = '—';
+    }
+    if (r.ms != null) {
+      ms.textContent = r.ms + 'ms';
+      ms.className = 'ms' + (r.ms < 100 ? ' fast' : r.ms > 500 ? ' slow' : '');
+    } else {
+      ms.textContent = 'timeout';
+      ms.className = 'ms';
+    }
+  }
+
+  const counts = { ok: 0, empty: 0, fail: 0, done: 0 };
+
+  function renderSummary(t0) {
+    doneEl.textContent = counts.done;
+    totalEl.textContent = servers.length;
+    okEl.textContent = counts.ok;
+    emptyEl.textContent = counts.empty;
+    failEl.textContent = counts.fail;
+    progressFill.style.width = Math.round((counts.done / servers.length) * 100) + '%';
+    if (counts.done === servers.length) {
+      elapsedEl.textContent = Math.round(performance.now() - t0) + 'ms total';
+    }
+  }
+
+  async function postChunk(chunk, domain, type, signal) {
+    const res = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      signal,
+      body: JSON.stringify({ domain, type, servers: chunk }),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }
+
+  async function check() {
+    let d = domainEl.value.trim().toLowerCase().replace(/^https?:\/\//, '').split('/')[0];
+    if (!d) return;
+    goBtn.disabled = true;
+    goBtn.textContent = 'Checking…';
+    resultsHeader.style.display = 'flex';
+    summaryBar.style.display = 'flex';
+    servers.forEach((ip) => setStatus(ip, 'pending', { ok: false, resolveable: null, ms: null }));
+    counts.ok = counts.empty = counts.fail = counts.done = 0;
+    renderSummary(0);
+    elapsedEl.textContent = '';
+
+    const t0 = performance.now();
+    for (let i = 0; i < servers.length; i += CHUNK) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 60000);
+      try {
+        const res = await postChunk(servers.slice(i, i + CHUNK), d, rtypeEl.value, controller.signal);
+        for (const r of res.results) {
+          const st = statusOf(r);
+          counts[st]++;
+          counts.done++;
+          setStatus(r.ip, st, r);
+        }
+        renderSummary(t0);
+      } catch (e) {
+        elapsedEl.textContent = 'chunk error: ' + e.message;
+        break;
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+    elapsedEl.textContent = Math.round(performance.now() - t0) + 'ms total';
+    goBtn.disabled = false;
+    goBtn.textContent = 'Check';
+  }
+
+  goBtn.addEventListener('click', check);
+  domainEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') check();
+  });
+</script>
