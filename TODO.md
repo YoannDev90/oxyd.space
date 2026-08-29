@@ -1,3 +1,0 @@
-- [x] Redirect Manager (via GitHub issue, redirect.center) — 🟡 MEDIUM
-- [ ] Rate limiting on DNS API — 🟡 MEDIUM
-- [ ] Monitoring uptime (BetterStack) — 🟢 LOW
