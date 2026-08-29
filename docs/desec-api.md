@@ -67,6 +67,22 @@ PATCH /domains/{zone}/rrsets/
 ]
 ```
 
+## TXT records
+
+TXT record values **must be wrapped in double quotes**:
+
+```json
+{
+  "subname": "_discord",
+  "type": "TXT",
+  "ttl": 3600,
+  "records": ["\"dh=ff122cbb5dd189a1132f329b17e190c8e5c34a28\""],
+  "comment": "oxyd-auto: discord verification"
+}
+```
+
+Without quotes, deSEC returns `400: Data for TXT records must be given using quotation marks.`
+
 ## Common errors
 
 | HTTP | Meaning | Fix |
