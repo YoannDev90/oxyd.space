@@ -169,6 +169,7 @@ def build_redirect_cname(destination, status_code="301"):
     port = parsed.port
     path = parsed.path or "/"
     scheme = parsed.scheme or "https"
+    query = urllib.parse.parse_qs(parsed.query)
 
     parts = [host]
     if path and path != "/":
@@ -177,6 +178,9 @@ def build_redirect_cname(destination, status_code="301"):
                 parts.append("opts-slash")
                 parts.append(segment)
         parts.append("opts-slash")
+    for key, values in query.items():
+        for val in values:
+            parts.append(f"opts-query-{key}-{val}")
     if scheme == "https":
         parts.append("opts-https")
     if status_code in ("302", "307", "308"):
