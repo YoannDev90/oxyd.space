@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
+use std::process::Command;
 use std::time::Duration;
 
 const DEVICE_CODE_URL: &str = "https://github.com/login/device/code";
@@ -93,6 +94,17 @@ pub async fn device_flow_login(client_id: &str) -> Result<TokenData, String> {
         "\nGo to {} and enter code: {}\n",
         resp.verification_uri, resp.user_code
     );
+
+    // Open browser automatically
+    let _ = Command::new("xdg-open")
+        .arg(&resp.verification_uri)
+        .spawn();
+
+    // Copy code to clipboard (cross-platform)
+    if let Ok(mut ctx) = arboard::Clipboard::new() {
+        let _ = ctx.set_text(&resp.user_code);
+    }
+    println!("Code copied to clipboard.\n");
 
     // Step 2: Poll for token
     let interval = Duration::from_secs(resp.interval.max(5));
