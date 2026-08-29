@@ -448,7 +448,7 @@ const dots = dnsJson.map((s) => {
 
 <script>
   const API = 'https://dqguiuyyhjqrrscncnnr.supabase.co/functions/v1/dns-propagate';
-  const CHUNK = 200;
+  const CHUNK = 25;
 
   const domainEl = document.getElementById('domain');
   const rtypeEl = document.getElementById('rtype');
@@ -591,25 +591,35 @@ const dots = dnsJson.map((s) => {
     elapsedEl.textContent = '';
 
     const t0 = performance.now();
-    for (let i = 0; i < servers.length; i += CHUNK) {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 60000);
-      try {
-        const res = await postChunk(servers.slice(i, i + CHUNK), d, rtypeEl.value, controller.signal);
-        for (const r of res.results) {
-          const st = statusOf(r);
-          counts[st]++;
-          counts.done++;
-          setStatus(r.ip, st, r);
+    const type = rtypeEl.value;
+    const chunks = [];
+    for (let i = 0; i < servers.length; i += CHUNK) chunks.push(servers.slice(i, i + CHUNK));
+
+    await Promise.all(
+      chunks.map(async (chunk) => {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 45000);
+        try {
+          const res = await postChunk(chunk, d, type, controller.signal);
+          for (const r of res.results) {
+            const st = statusOf(r);
+            counts[st]++;
+            counts.done++;
+            setStatus(r.ip, st, r);
+          }
+        } catch (e) {
+          for (const ip of chunk) {
+            counts.fail++;
+            counts.done++;
+            setStatus(ip, 'fail', { ok: false, resolveable: null, ms: null });
+          }
+        } finally {
+          clearTimeout(timer);
+          renderSummary(t0);
         }
-        renderSummary(t0);
-      } catch (e) {
-        elapsedEl.textContent = 'chunk error: ' + e.message;
-        break;
-      } finally {
-        clearTimeout(timer);
-      }
-    }
+      }),
+    );
+
     elapsedEl.textContent = Math.round(performance.now() - t0) + 'ms total';
     goBtn.disabled = false;
     goBtn.textContent = 'Check';
