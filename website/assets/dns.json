@@ -5971,22 +5971,22 @@
   },
   {
     "ip": "103.197.106.63",
-    "label": "DNS 103.197.106.63",
-    "provider": "Unknown",
-    "country": "KH",
-    "city": "Unknown",
-    "lat": 12.4824285,
-    "lng": 106.1757649,
-    "flag": "🇰🇭"
+    "label": "Alwar Online DNS",
+    "provider": "Alwar Online",
+    "country": "IN",
+    "city": "Alwar",
+    "lat": 27.5634,
+    "lng": 76.626,
+    "flag": "🇮🇳"
   },
   {
     "ip": "103.197.104.239",
-    "label": "DNS 103.197.104.239",
-    "provider": "Unknown",
-    "country": "KH",
-    "city": "Unknown",
-    "lat": 12.4824285,
-    "lng": 106.1757649,
-    "flag": "🇰🇭"
+    "label": "Asianet DNS",
+    "provider": "Asianet",
+    "country": "NP",
+    "city": "Kathmandu",
+    "lat": 27.7108,
+    "lng": 85.3251,
+    "flag": "🇳🇵"
   }
 ]
