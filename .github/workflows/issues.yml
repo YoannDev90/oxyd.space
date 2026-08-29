@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   register:
-    if: ${{ !github.event.issue.pull_request && startsWith(github.event.issue.title, 'Subdomain registration') }}
+    if: ${{ !github.event.issue.pull_request && (startsWith(github.event.issue.title, 'Subdomain registration') || startsWith(github.event.issue.title, 'Subdomain redirect')) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
