@@ -428,7 +428,7 @@ def main():
         fail(errors)
         return
 
-    extra_records, extra_errors = parse_extra_records(sections[LABEL_EXTRA])
+    extra_records, extra_errors = parse_extra_records(sections.get(LABEL_EXTRA))
     errors = list(extra_errors)
 
     if request not in (REQ_REGISTER, REQ_UPDATE, REQ_DELETE):
