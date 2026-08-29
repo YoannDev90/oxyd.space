@@ -2,7 +2,16 @@
 
 Free subdomains for everyone, powered by open source. Point your project at `yourname.oxyd.space` — one issue form, zero dollars, live in minutes.
 
-**Landing page:** [https://oxyd.space](https://oxyd.space)
+**Site:** [https://oxyd.space](https://oxyd.space)
+
+## Tools
+
+| Tool | Description |
+|------|-------------|
+| [DNS Propagation](https://oxyd.space/propagation) | Check DNS resolution across 394+ global resolvers via Supabase edge functions |
+| [Availability Checker](https://oxyd.space/checker) | Check if a subdomain is free before registering |
+| [Personal Dashboard](https://oxyd.space/dashboard) | Manage your subdomains (GitHub OAuth via Supabase) |
+| [Changelog](https://oxyd.space/changelog) | Track every update and improvement |
 
 ## How it works
 
@@ -70,10 +79,10 @@ The bot generates the config file for you (stored under `domains/<base-domain>/`
 
 | Request                       | Result |
 |-------------------------------|--------|
-| `nextcloud.oxyd.space`        | ❌ reserved top-level name |
-| `yoann.nextcloud.oxyd.space`  | ❌ cannot end with a reserved word |
-| `nextcloud.yoann.oxyd.space`  | ✅ personal instance of Nextcloud |
-| `s1.nextcloud.yoann.oxyd.space` | ✅ deeper nesting is fine |
+| `nextcloud.oxyd.space`        | reserved top-level name |
+| `yoann.nextcloud.oxyd.space`  | cannot end with a reserved word |
+| `nextcloud.yoann.oxyd.space`  | personal instance of Nextcloud |
+| `s1.nextcloud.yoann.oxyd.space` | deeper nesting is fine |
 
 - Max **10 subdomains per GitHub account**, ownership is tied to the issue author account.
 - Updates/deletes are only accepted from the current owner. Transfers are not automated.
@@ -82,13 +91,13 @@ The bot generates the config file for you (stored under `domains/<base-domain>/`
 
 | You run…      | Issue form values                                   |
 |---------------|------------------------------------------------------|
-| Personal site | CNAME → `you.github.io`, www prefix ✅                |
+| Personal site | CNAME → `you.github.io`, www prefix on               |
 | Nextcloud     | `nextcloud.you` → A/AAAA of your server              |
 | Second node   | `s2.nextcloud.you` → A/AAAA of the other server      |
 
 ### More base domains
 
-`oxyd.space` is the flagship, but other domain owners can plug **their own domains** into this same bot (same rules, same automation — see [MAINTAINER.md](MAINTAINER.md) → *Onboard another domain*). Available zones are listed in the issue form's **Base domain** dropdown and in [`config/domains.json`](config/domains.json).
+`oxyd.space` is the flagship, but other domain owners can plug **their own domains** into this same bot (same rules, same automation — see [MAINTAINER.md](MAINTAINER.md)). Available zones are listed in the issue form's **Base domain** dropdown and in [`config/domains.json`](config/domains.json).
 
 ### AI-friendly documentation
 
@@ -104,6 +113,22 @@ For automated registration using `gh` CLI or AI assistants, see [docs/registrati
 
 ---
 
+## Tech stack
+
+- **Frontend:** [Astro](https://astro.build/) — static site, zero JS runtime overhead
+- **DNS:** [deSEC](https://desec.io/) — DNS hosting with API
+- **Database:** [Supabase](https://supabase.com/) — PostgreSQL + edge functions + GitHub OAuth
+- **Edge functions:** [Deno](https://deno.land/) runtime on Supabase — DNS propagation queries via `Deno.resolveDns`
+- **CI/CD:** GitHub Actions — automated deploy to `live` branch (GitHub Pages)
+- **Health monitoring:** Weekly UDP probes via stdlib Python, auto-eviction of dead resolvers
+
 ## For maintainers
 
 Setup, moderation and operations are documented in [MAINTAINER.md](MAINTAINER.md).
+
+## Releases
+
+| Version | Date | Highlights |
+|---------|------|------------|
+| [v1.1.0](https://github.com/YoannDev90/oxyd.space/releases/tag/v1.1.0) | 2026-08-29 | DNS Propagation Checker, weekly health monitoring |
+| [v1.0.0](https://github.com/YoannDev90/oxyd.space/releases/tag/v1.0.0) | 2026-08-26 | First launch — subdomain registration, tools hub, dashboard |
