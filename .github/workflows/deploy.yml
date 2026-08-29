@@ -34,7 +34,9 @@ jobs:
         working-directory: website
 
       - name: Build Astro
-        run: npm run build
+        run: |
+          rm -rf ../dist .astro
+          npm run build
         working-directory: website
 
       - name: Deploy to live branch
