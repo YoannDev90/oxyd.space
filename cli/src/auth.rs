@@ -40,6 +40,17 @@ fn token_path() -> PathBuf {
 }
 
 pub fn load_token() -> Option<TokenData> {
+    // 1. Check OXYD_TOKEN env var (for CI)
+    if let Ok(pat) = std::env::var("OXYD_TOKEN") {
+        if !pat.is_empty() {
+            return Some(TokenData {
+                access_token: pat,
+                token_type: "bearer".into(),
+                scope: "repo".into(),
+            });
+        }
+    }
+    // 2. Check ~/.config/oxyd/token.json
     let data = fs::read_to_string(token_path()).ok()?;
     serde_json::from_str(&data).ok()
 }

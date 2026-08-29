@@ -142,6 +142,18 @@ cd cli && cargo build --release
 
 The CLI pre-validates against the same rules as the bot (via `scripts/validate.py`), then opens a GitHub issue. No server required — it runs locally or in CI/CD.
 
+**CI/CD usage** (GitHub Actions):
+
+```yaml
+- name: Register subdomain
+  env:
+    OXYD_TOKEN: ${{ secrets.OXYD_BOT_PAT }}  # PAT with repo scope
+  run: |
+    oxyd subdomain create --name app --type CNAME --value app.vercel.app --json
+```
+
+The `OXYD_TOKEN` env var is used instead of the device flow in CI. Create a PAT at [github.com/settings/tokens](https://github.com/settings/tokens) with `repo` scope.
+
 ### Domain lifetime
 
 `oxyd.space` is registered **one year at a time**. One month before it expires, the project will move to a cheaper successor domain: every registered subdomain is migrated to the new zone automatically, and the old names are kept as permanent redirects — your links keep working, no action required on your side.
