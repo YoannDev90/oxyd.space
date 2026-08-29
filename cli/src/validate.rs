@@ -83,13 +83,17 @@ pub async fn validate(
         .output()
         .map_err(|e| format!("failed to run python3: {e}"))?;
 
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("validation failed: {stderr}"));
-    }
-
     let stdout = String::from_utf8(output.stdout)
         .map_err(|e| format!("invalid UTF-8 output: {e}"))?;
 
-    serde_json::from_str(&stdout).map_err(|e| format!("failed to parse validation output: {e}"))
+    // Try to parse JSON output regardless of exit code
+    // (validate.py exits 1 on validation failure, but still outputs valid JSON)
+    if !stdout.trim().is_empty() {
+        return serde_json::from_str(&stdout)
+            .map_err(|e| format!("failed to parse validation output: {e}"));
+    }
+
+    // Fallback: no stdout, treat as hard error
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    Err(format!("validation failed: {stderr}"))
 }
