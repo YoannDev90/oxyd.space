@@ -1,0 +1,86 @@
+use serde::Deserialize;
+use std::path::PathBuf;
+use std::process::Command;
+
+#[derive(Debug, Deserialize)]
+pub struct ValidationResult {
+    pub valid: bool,
+    pub errors: Vec<String>,
+    pub warnings: Vec<String>,
+}
+
+fn find_validate_script() -> Result<String, String> {
+    // Try relative to the binary's location (dev mode: cli/target/debug/oxyd)
+    let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    path.pop(); // cli/
+    path.pop(); // repo root
+    path.push("scripts");
+    path.push("validate.py");
+    if path.exists() {
+        return Ok(path.to_string_lossy().to_string());
+    }
+    Err("validate.py not found".into())
+}
+
+pub async fn validate(
+    action: &str,
+    subdomain: &str,
+    zone: &str,
+    record_type: &str,
+    record_value: &str,
+    www: bool,
+    extra_json: Option<&str>,
+    github_user: Option<&str>,
+    github_id: Option<i64>,
+) -> Result<ValidationResult, String> {
+    let script = find_validate_script()?;
+
+    let mut args = vec![
+        script,
+        "--json".into(),
+        "--action".into(),
+        action.into(),
+        "--subdomain".into(),
+        subdomain.into(),
+        "--zone".into(),
+        zone.into(),
+        "--record-type".into(),
+        record_type.into(),
+        "--record-value".into(),
+        record_value.into(),
+    ];
+
+    if www {
+        args.push("--www".into());
+    }
+
+    if let Some(extra) = extra_json {
+        args.push("--extra-json".into());
+        args.push(extra.into());
+    }
+
+    if let Some(user) = github_user {
+        args.push("--github-user".into());
+        args.push(user.into());
+    }
+
+    if let Some(id) = github_id {
+        args.push("--github-id".into());
+        args.push(id.to_string());
+    }
+
+    let output = Command::new("python3")
+        .args(&args[1..])
+        .output()
+        .map_err(|e| format!("failed to run python3: {e}"))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("validation failed: {stderr}"));
+    }
+
+    let stdout = String::from_utf8(output.stdout)
+        .map_err(|e| format!("invalid UTF-8 output: {e}"))?;
+
+    serde_json::from_str(&stdout).map_err(|e| format!("failed to parse validation output: {e}"))
+}

@@ -107,6 +107,41 @@ For automated registration using `gh` CLI or AI assistants, see [docs/registrati
 - Naming rules and troubleshooting
 - AI assistant instructions for helping users
 
+### CLI tool
+
+A Rust CLI is available for programmatic subdomain management:
+
+```bash
+# Build from source (requires Rust)
+cd cli && cargo build --release
+
+# Authenticate
+./target/release/oxyd login
+
+# Register a subdomain (pre-validates, then opens a GitHub issue)
+./target/release/oxyd subdomain create \
+  --name myapp.yoann \
+  --type CNAME \
+  --value yoann.github.io
+
+# List your subdomains
+./target/release/oxyd subdomain list
+
+# Delete a subdomain
+./target/release/oxyd subdomain delete --name myapp.yoann
+
+# Check DNS propagation
+./target/release/oxyd propagation --domain example.com --type A
+
+# JSON output (for Terraform/Ansible integration)
+./target/release/oxyd --json subdomain create \
+  --name myapp.yoann \
+  --type CNAME \
+  --value yoann.github.io
+```
+
+The CLI pre-validates against the same rules as the bot (via `scripts/validate.py`), then opens a GitHub issue. No server required — it runs locally or in CI/CD.
+
 ### Domain lifetime
 
 `oxyd.space` is registered **one year at a time**. One month before it expires, the project will move to a cheaper successor domain: every registered subdomain is migrated to the new zone automatically, and the old names are kept as permanent redirects — your links keep working, no action required on your side.

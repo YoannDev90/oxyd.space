@@ -370,6 +370,164 @@ def build_report(rows, problems_count):
     return "\n".join(lines)
 
 
+def validate_from_args(args):
+    """Validate a subdomain registration from CLI arguments.
+
+    Args:
+        args: dict with keys: action, subdomain, zone, record_type, record_value,
+              extra_records (optional list of dicts), www (optional bool),
+              github_user (optional str), github_id (optional int)
+
+    Returns:
+        dict with keys: valid (bool), errors (list), warnings (list)
+    """
+    errors, warnings = [], []
+    action = args.get("action", "")
+    stem = (args.get("subdomain") or "").strip().lower()
+    zone = (args.get("zone") or DEFAULT_ZONE).strip().lower()
+    rtype = (args.get("record_type") or "").strip().upper()
+    rvalue = (args.get("record_value") or "").strip()
+    extra = args.get("extra_records") or []
+    www = args.get("www", False)
+    github_user = args.get("github_user")
+
+    if action not in ("register", "update", "delete"):
+        errors.append(f"action must be register, update, or delete (got '{action}')")
+        return {"valid": False, "errors": errors, "warnings": warnings}
+
+    if zone not in ZONES:
+        errors.append(f"unknown zone '{zone}' (not in {CONFIG_FILE})")
+
+    if not stem:
+        errors.append("subdomain is required")
+
+    if action == "delete":
+        if errors:
+            return {"valid": False, "errors": errors, "warnings": warnings}
+        name_errs = validate_name(stem)
+        if name_errs:
+            errors.extend(name_errs)
+        return {"valid": not errors, "errors": errors, "warnings": warnings}
+
+    if rtype not in ALLOWED_TYPES:
+        errors.append(f"record type must be one of {sorted(ALLOWED_TYPES)}")
+
+    if not rvalue:
+        errors.append("record value is required")
+    elif rtype == "CNAME":
+        if not is_valid_hostname(rvalue.rstrip(".")):
+            errors.append("invalid CNAME target hostname")
+    elif rtype == "A":
+        try:
+            if ipaddress.ip_address(rvalue).version != 4:
+                raise ValueError
+        except (ValueError, TypeError):
+            errors.append("value must be a valid IPv4 address")
+    elif rtype == "AAAA":
+        try:
+            if ipaddress.ip_address(rvalue).version != 6:
+                raise ValueError
+        except (ValueError, TypeError):
+            errors.append("value must be a valid IPv6 address")
+    elif rtype == "TXT":
+        if not isinstance(rvalue, str) or not (1 <= len(rvalue) <= 255):
+            errors.append("TXT value must be 1-255 characters")
+
+    records = [{"type": rtype, "value": rvalue}]
+    for i, extra_rec in enumerate(extra):
+        ert = (extra_rec.get("type") or "").strip().upper()
+        erv = (extra_rec.get("value") or "").strip()
+        if ert not in ALLOWED_TYPES:
+            errors.append(
+                f"additional record {i}: type must be one of {sorted(ALLOWED_TYPES)}"
+            )
+            continue
+        rec = {"type": ert, "value": erv}
+        if "ttl" in extra_rec:
+            ttl = extra_rec["ttl"]
+            if (
+                isinstance(ttl, bool)
+                or not isinstance(ttl, int)
+                or not (TTL_MIN <= ttl <= TTL_MAX)
+            ):
+                errors.append(f"additional record {i}: ttl must be {TTL_MIN}-{TTL_MAX}")
+            else:
+                rec["ttl"] = ttl
+        records.append(rec)
+
+    seen = set()
+    for rec in records:
+        key = (
+            rec["type"],
+            rec["value"].lower() if rec["type"] != "TXT" else rec["value"],
+        )
+        if key in seen:
+            errors.append(f"duplicate record: {rec['type']} {rec['value']}")
+        seen.add(key)
+
+    if stem:
+        name_errs = validate_name(stem)
+        if name_errs:
+            errors.extend(name_errs)
+
+    if github_user and action == "register":
+        count = count_owner_domains(github_user)
+        if count >= MAX_DOMAINS_PER_USER:
+            errors.append(f"domain limit reached ({MAX_DOMAINS_PER_USER} max)")
+
+    if not errors and www is not None and not isinstance(www, bool):
+        errors.append('"www" must be true or false')
+
+    return {"valid": not errors, "errors": errors, "warnings": warnings}
+
+
+def run_json_cli():
+    """CLI mode: validate.py --json --action ACTION --subdomain NAME --zone ZONE
+    --record-type TYPE --record-value VALUE [--www] [--extra-json JSON]
+    [--github-user USER] [--github-id ID]
+    """
+    args = sys.argv[1:]
+    if "--json" not in args:
+        return None
+    parsed = {}
+    i = 0
+    while i < len(args):
+        if args[i] == "--json":
+            i += 1
+        elif args[i] == "--action" and i + 1 < len(args):
+            parsed["action"] = args[i + 1]
+            i += 2
+        elif args[i] == "--subdomain" and i + 1 < len(args):
+            parsed["subdomain"] = args[i + 1]
+            i += 2
+        elif args[i] == "--zone" and i + 1 < len(args):
+            parsed["zone"] = args[i + 1]
+            i += 2
+        elif args[i] == "--record-type" and i + 1 < len(args):
+            parsed["record_type"] = args[i + 1]
+            i += 2
+        elif args[i] == "--record-value" and i + 1 < len(args):
+            parsed["record_value"] = args[i + 1]
+            i += 2
+        elif args[i] == "--www":
+            parsed["www"] = True
+            i += 1
+        elif args[i] == "--extra-json" and i + 1 < len(args):
+            parsed["extra_records"] = json.loads(args[i + 1])
+            i += 2
+        elif args[i] == "--github-user" and i + 1 < len(args):
+            parsed["github_user"] = args[i + 1]
+            i += 2
+        elif args[i] == "--github-id" and i + 1 < len(args):
+            parsed["github_id"] = int(args[i + 1])
+            i += 2
+        else:
+            i += 1
+    result = validate_from_args(parsed)
+    print(json.dumps(result))
+    return 0 if result["valid"] else 1
+
+
 def run_local_mode():
     files = list(iter_config_paths())
     if not files:
@@ -399,6 +557,9 @@ def run_local_mode():
 
 
 def main():
+    json_result = run_json_cli()
+    if json_result is not None:
+        sys.exit(json_result)
     event_path = os.environ.get("GITHUB_EVENT_PATH")
     if not event_path or not os.path.exists(event_path):
         sys.exit(run_local_mode())
