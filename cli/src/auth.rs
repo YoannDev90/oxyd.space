@@ -102,9 +102,14 @@ pub async fn device_flow_login(client_id: &str) -> Result<TokenData, String> {
 
     // Copy code to clipboard (try multiple methods)
     let code = &resp.user_code;
-    let copied = arboard::Clipboard::new()
-        .and_then(|mut ctx| ctx.set_text(code.as_str()).map(|_| true))
+    let copied = Command::new("wl-copy")
+        .arg(code)
+        .spawn()
+        .and_then(|mut child| child.wait().map(|_| true))
         .unwrap_or(false)
+        || arboard::Clipboard::new()
+            .and_then(|mut ctx| ctx.set_text(code.as_str()).map(|_| true))
+            .unwrap_or(false)
         || Command::new("xclip")
             .args(["-selection", "clipboard"])
             .stdin(std::process::Stdio::piped())
@@ -138,7 +143,8 @@ pub async fn device_flow_login(client_id: &str) -> Result<TokenData, String> {
     if copied {
         println!("Code copied to clipboard.\n");
     } else {
-        println!("Copy the code above manually.\n");
+        eprintln!("⚠ Could not copy to clipboard. Install wl-clipboard (Wayland) or xclip (X11).");
+        println!();
     }
 
     // Step 2: Poll for token
