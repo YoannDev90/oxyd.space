@@ -121,6 +121,7 @@ For automated registration using `gh` CLI or AI assistants, see [docs/registrati
 - **Edge functions:** [Deno](https://deno.land/) runtime on Supabase — DNS propagation queries via `Deno.resolveDns`
 - **CI/CD:** GitHub Actions — automated deploy to `live` branch (GitHub Pages)
 - **Health monitoring:** Weekly UDP probes via stdlib Python, auto-eviction of dead resolvers
+- **Uptime monitoring:** [BetterStack](https://betterstack.com/) — status page at [status.oxyd.space](https://status.oxyd.space)
 
 ## For maintainers
 
