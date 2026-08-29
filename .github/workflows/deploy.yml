@@ -30,15 +30,11 @@ jobs:
           cache-dependency-path: website/package-lock.json
 
       - name: Install dependencies
-        run: |
-          rm -rf node_modules
-          npm ci
+        run: npm ci
         working-directory: website
 
       - name: Build Astro
-        run: |
-          rm -rf ../dist .astro
-          npm run build
+        run: npm run build
         working-directory: website
 
       - name: Deploy to live branch
