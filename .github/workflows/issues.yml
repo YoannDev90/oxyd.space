@@ -2,7 +2,7 @@ name: Process registration
 
 on:
   issues:
-    types: [opened]
+    types: [opened, reopened]
 
 concurrency:
   group: register-${{ github.event.issue.number }}

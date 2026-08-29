@@ -358,7 +358,7 @@ def main():
     with open(event_path, encoding="utf-8") as fh:
         event = json.load(fh)
     issue = event.get("issue") or {}
-    if issue.get("pull_request") or event.get("action") != "opened":
+    if issue.get("pull_request") or event.get("action") not in ("opened", "reopened"):
         print("Not a fresh issue, skipping.")
         return
     number = issue["number"]
