@@ -125,6 +125,8 @@ def pres_content(rtype, value):
 
 def build_redirect_cname(destination, status_code="301"):
     """Build a redirect.center CNAME value from a destination URL."""
+    import base64 as b64
+
     parsed = urlparse(destination)
     host = parsed.hostname or ""
     port = parsed.port
@@ -139,9 +141,10 @@ def build_redirect_cname(destination, status_code="301"):
                 parts.append("opts-slash")
                 parts.append(segment)
         parts.append("opts-slash")
-    for key, values in query.items():
-        for val in values:
-            parts.append(f"opts-query-{key}-{val}")
+    if query:
+        query_str = urllib.parse.urlencode(query, doseq=True)
+        b32 = b64.b32encode(query_str.encode()).decode().rstrip("=").lower()
+        parts.append(f"opts-query-{b32}")
     if scheme == "https":
         parts.append("opts-https")
     if status_code in ("302", "307", "308"):
@@ -342,15 +345,17 @@ def sync_zone(zone_cfg, secrets, dry_run):
     for rec in creates:
         try:
             api(
-                "POST",
+                "PATCH",
                 f"/domains/{zone}/rrsets/",
-                body={
-                    "subname": rec["subname"],
-                    "type": rec["type"],
-                    "ttl": rec["ttl"],
-                    "records": rec["records"],
-                    "comment": rec["comment"],
-                },
+                body=[
+                    {
+                        "subname": rec["subname"],
+                        "type": rec["type"],
+                        "ttl": rec["ttl"],
+                        "records": rec["records"],
+                        "comment": rec["comment"],
+                    }
+                ],
                 token=token,
             )
             print(f"created {rec['type']} {rec['subname']}.{zone}")
@@ -359,15 +364,18 @@ def sync_zone(zone_cfg, secrets, dry_run):
             print(e, file=sys.stderr)
     for cur, rec in updates:
         try:
-            sub = urllib.parse.quote(rec["subname"])
             api(
                 "PATCH",
-                f"/domains/{zone}/rrsets/{sub}/{rec['type']}/",
-                body={
-                    "ttl": rec["ttl"],
-                    "records": rec["records"],
-                    "comment": rec["comment"],
-                },
+                f"/domains/{zone}/rrsets/",
+                body=[
+                    {
+                        "subname": rec["subname"],
+                        "type": rec["type"],
+                        "ttl": rec["ttl"],
+                        "records": rec["records"],
+                        "comment": rec["comment"],
+                    }
+                ],
                 token=token,
             )
             print(f"updated {rec['type']} {rec['subname']}.{zone}")
@@ -376,8 +384,21 @@ def sync_zone(zone_cfg, secrets, dry_run):
             print(e, file=sys.stderr)
     for cur in deletes:
         try:
-            sub = urllib.parse.quote(normalize_subname(cur["subname"], zone))
-            api("DELETE", f"/domains/{zone}/rrsets/{sub}/{cur['type']}/", token=token)
+            subname = normalize_subname(cur["subname"], zone)
+            api(
+                "PATCH",
+                f"/domains/{zone}/rrsets/",
+                body=[
+                    {
+                        "subname": subname,
+                        "type": cur["type"],
+                        "ttl": 60,
+                        "records": [],
+                        "comment": cur.get("comment", ""),
+                    }
+                ],
+                token=token,
+            )
             print(f"deleted {cur['type']} {cur['subname']}.{zone}")
         except RuntimeError as e:
             failures += 1
@@ -439,15 +460,18 @@ def upgrade_redirect_ttls(dry_run=False):
                 continue
 
             try:
-                sub = urllib.parse.quote(subname)
                 api(
                     "PATCH",
-                    f"/domains/{zone}/rrsets/{sub}/CNAME/",
-                    body={
-                        "ttl": REDIRECT_TTL * 4,
-                        "records": records,
-                        "comment": comment,
-                    },
+                    f"/domains/{zone}/rrsets/",
+                    body=[
+                        {
+                            "subname": subname,
+                            "type": "CNAME",
+                            "ttl": REDIRECT_TTL * 4,
+                            "records": records,
+                            "comment": comment,
+                        }
+                    ],
                     token=token,
                 )
                 upgraded += 1

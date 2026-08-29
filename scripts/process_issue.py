@@ -164,6 +164,8 @@ def finish_issue(repo, number, ok, body, label, token):
 
 def build_redirect_cname(destination, status_code="301"):
     """Build a redirect.center CNAME value from a destination URL."""
+    import base64 as b64
+
     parsed = urllib.parse.urlparse(destination)
     host = parsed.hostname or ""
     port = parsed.port
@@ -178,9 +180,10 @@ def build_redirect_cname(destination, status_code="301"):
                 parts.append("opts-slash")
                 parts.append(segment)
         parts.append("opts-slash")
-    for key, values in query.items():
-        for val in values:
-            parts.append(f"opts-query-{key}-{val}")
+    if query:
+        query_str = urllib.parse.urlencode(query, doseq=True)
+        b32 = b64.b32encode(query_str.encode()).decode().rstrip("=").lower()
+        parts.append(f"opts-query-{b32}")
     if scheme == "https":
         parts.append("opts-https")
     if status_code in ("302", "307", "308"):
