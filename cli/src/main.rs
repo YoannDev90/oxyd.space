@@ -7,7 +7,37 @@ mod validate;
 use clap::{Parser, Subcommand};
 use output::{CommandOutput, DomainEntry, PropagationServer};
 
-const CLIENT_ID: &str = "Iv2.ciLFoGBryDpxVXFN8qFB"; // TODO: replace with real OAuth App client_id
+const CLIENT_ID: &str = "Ov23lirLHSAfzpESgnQx";
+
+fn find_dns_json() -> Result<std::path::PathBuf, String> {
+    // Relative to CARGO_MANIFEST_DIR (dev mode)
+    let mut path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    path.pop();
+    path.pop();
+    path.push("website");
+    path.push("public");
+    path.push("assets");
+    path.push("dns.json");
+    if path.exists() {
+        return Ok(path);
+    }
+
+    // Relative to cwd (installed binary in same repo)
+    let path = std::path::PathBuf::from("website/public/assets/dns.json");
+    if path.exists() {
+        return Ok(path);
+    }
+
+    // Fallback: ~/Documents/GitHub/oxyd.space
+    if let Some(home) = dirs::home_dir() {
+        let path = home.join("Documents/GitHub/oxyd.space/website/public/assets/dns.json");
+        if path.exists() {
+            return Ok(path);
+        }
+    }
+
+    Err("dns.json not found".into())
+}
 
 #[derive(Parser)]
 #[command(name = "oxyd", version, about = "CLI tool for oxyd.space subdomain management")]
@@ -293,9 +323,7 @@ async fn cmd_subdomain_list(zone: &str) -> Result<CommandOutput, String> {
     );
     let resp = client
         .get(&url)
-        .header("Accept", "application/vnd.github+json")
-        .header("X-GitHub-Api-Version", "2022-11-28")
-        .header("Authorization", format!("Bearer {}", token_data.access_token))
+        .headers(github::auth_headers(&token_data.access_token))
         .send()
         .await
         .map_err(|e| format!("GitHub API error: {e}"))?;
@@ -322,9 +350,7 @@ async fn cmd_subdomain_list(zone: &str) -> Result<CommandOutput, String> {
         );
         let file_resp = client
             .get(&file_url)
-            .header("Accept", "application/vnd.github+json")
-            .header("X-GitHub-Api-Version", "2022-11-28")
-            .header("Authorization", format!("Bearer {}", token_data.access_token))
+            .headers(github::auth_headers(&token_data.access_token))
             .send()
             .await;
 
@@ -367,13 +393,7 @@ async fn cmd_propagation(domain: &str, r#type: &str) -> Result<CommandOutput, St
     let url = "https://dqguiuyyhjqrrscncnnr.supabase.co/functions/v1/dns-propagate";
 
     // Load all server IPs from dns.json
-    let dns_json_path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .unwrap()
-        .join("website")
-        .join("public")
-        .join("assets")
-        .join("dns.json");
+    let dns_json_path = find_dns_json()?;
 
     let dns_data: Vec<serde_json::Value> = if dns_json_path.exists() {
         let content = std::fs::read_to_string(&dns_json_path)

@@ -23,10 +23,11 @@ pub struct ContentEntry {
     pub entry_type: String,
 }
 
-fn auth_headers(token: &str) -> HeaderMap {
+pub fn auth_headers(token: &str) -> HeaderMap {
     let mut headers = HeaderMap::new();
     headers.insert("Accept", HeaderValue::from_static("application/vnd.github+json"));
     headers.insert("X-GitHub-Api-Version", HeaderValue::from_static("2022-11-28"));
+    headers.insert("User-Agent", HeaderValue::from_static("oxyd-cli"));
     headers.insert(
         "Authorization",
         HeaderValue::from_str(&format!("Bearer {token}")).unwrap(),
