@@ -208,10 +208,40 @@ const dots = servers.map((s) => {
       font-size: 13px;
       color: var(--muted);
     }
-    .results-grid {
+    .results-actions {
       display: flex;
-      flex-direction: column;
-      gap: 6px;
+      align-items: center;
+      gap: 10px;
+    }
+    .results-actions select {
+      padding: 8px 10px;
+      font-size: 12px;
+      border-radius: 8px;
+    }
+    .country-group {
+      margin-bottom: 14px;
+    }
+    .country-group h3 {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 6px 4px 8px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 8px;
+    }
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      align-items: start;
+    }
+    @media (max-width: 860px) {
+      .results-grid {
+        grid-template-columns: 1fr;
+      }
     }
     .srv {
       display: grid;
@@ -275,7 +305,7 @@ const dots = servers.map((s) => {
       font-size: 12px;
       word-break: break-all;
       text-align: right;
-      max-width: 280px;
+      max-width: 220px;
     }
     .srv .ms {
       font-size: 12px;
@@ -307,7 +337,7 @@ const dots = servers.map((s) => {
       border: 1px solid var(--line);
       border-radius: 10px;
       padding: 12px 16px;
-      margin-top: 16px;
+      margin-bottom: 12px;
       font-family: var(--mono);
       font-size: 13px;
       flex-wrap: wrap;
@@ -342,6 +372,38 @@ const dots = servers.map((s) => {
       border-radius: 2px;
       transition: width 0.3s;
       width: 0%;
+    }
+
+    .map-expand {
+      margin-left: auto;
+      background: transparent;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .map-expand:hover {
+      color: var(--text);
+      border-color: var(--accent);
+    }
+    .map-wrap.expanded {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      margin: 0;
+      border: none;
+      border-radius: 0;
+      background: rgba(5, 8, 12, 0.97);
+      padding: 16px;
+      overflow: auto;
+    }
+    .map-wrap.expanded #map {
+      width: 100%;
+      height: calc(100vh - 150px);
     }
   </style>
 
@@ -383,6 +445,7 @@ const dots = servers.map((s) => {
           <span><span class="dot ok"></span> Resolved</span>
           <span><span class="dot empty"></span> No records</span>
           <span><span class="dot fail"></span> Failed</span>
+          <button id="mapExpand" class="map-expand" title="Expand map">Expand</button>
         </div>
       </div>
 
@@ -412,14 +475,29 @@ const dots = servers.map((s) => {
       <div id="resultsArea">
         <div class="results-header" style="display: none;">
           <h2>Results</h2>
+          <span class="results-actions">
+            <select id="viewmode">
+              <option value="default">default</option>
+              <option value="country">by country</option>
+            </select>
+            <span class="count"
+              ><b id="doneCount">0</b>/<b id="totalCount">0</b></span
+            >
+          </span>
+        </div>
+        <div class="summary-bar" style="display: none;">
           <span class="count"
-            ><b id="doneCount">0</b>/<b id="totalCount">0</b></span
+            ><span class="ok" id="okCount">0</span> ok ·
+            <span class="empty" id="emptyCount">0</span> empty ·
+            <span class="fail" id="failCount">0</span> failed</span
           >
+          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+          <span class="elapsed" id="elapsed"></span>
         </div>
         <div id="resultsGrid" class="results-grid">
           {
             servers.map((s) => (
-              <div class="srv" data-ip={s.ip}>
+              <div class="srv" data-ip={s.ip} data-country={s.country} data-flag={s.flag}>
                 <span class="dot pending"></span>
                 <div class="info">
                   <span class="name">{s.flag + ' ' + s.label}</span>
@@ -433,15 +511,7 @@ const dots = servers.map((s) => {
             ))
           }
         </div>
-        <div class="summary-bar" style="display: none;">
-          <span class="count"
-            ><span class="ok" id="okCount">0</span> ok ·
-            <span class="empty" id="emptyCount">0</span> empty ·
-            <span class="fail" id="failCount">0</span> failed</span
-          >
-          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-          <span class="elapsed" id="elapsed"></span>
-        </div>
+        <div id="countryGrid" class="results-grid" style="display: none;"></div>
       </div>
     </div>
   </main>
@@ -464,13 +534,58 @@ const dots = servers.map((s) => {
   const elapsedEl = document.getElementById('elapsed');
   const resultsHeader = document.querySelector('.results-header');
   const summaryBar = document.querySelector('.summary-bar');
+  const viewmodeEl = document.getElementById('viewmode');
+  const countryGrid = document.getElementById('countryGrid');
+  const mapExpandBtn = document.getElementById('mapExpand');
 
   const servers = Array.from(grid.querySelectorAll('.srv')).map((el) => el.dataset.ip);
   const rowsByIp = new Map();
   const dotsByIp = new Map();
+  const flatOrder = Array.from(grid.children);
 
   grid.querySelectorAll('.srv').forEach((el) => rowsByIp.set(el.dataset.ip, el));
   document.querySelectorAll('.srv-dot').forEach((el) => dotsByIp.set(el.dataset.ip, el));
+
+  const countryNames = new Intl.DisplayNames('en', { type: 'region' });
+  const nameOf = (c) => {
+    try {
+      return countryNames.of(c || 'ZZ');
+    } catch {
+      return c || 'Unknown';
+    }
+  };
+
+  function applyViewMode() {
+    if (viewmodeEl.value === 'country') {
+      countryGrid.textContent = '';
+      const groups = new Map();
+      for (const row of flatOrder) {
+        const c = row.dataset.country || 'ZZ';
+        if (!groups.has(c)) groups.set(c, []);
+        groups.get(c).push(row);
+      }
+      const sorted = [...groups.entries()].sort((a, b) => nameOf(a[0]).localeCompare(nameOf(b[0])));
+      for (const [code, rows] of sorted) {
+        const g = document.createElement('div');
+        g.className = 'country-group';
+        const h = document.createElement('h3');
+        h.textContent = (rows[0].dataset.flag || '') + ' ' + nameOf(code) + ' · ' + rows.length;
+        const cards = document.createElement('div');
+        cards.className = 'results-grid';
+        for (const r of rows) cards.appendChild(r);
+        g.append(h, cards);
+        countryGrid.appendChild(g);
+      }
+      grid.style.display = 'none';
+      countryGrid.style.display = 'grid';
+    } else {
+      for (const r of flatOrder) grid.appendChild(r);
+      grid.style.display = 'grid';
+      countryGrid.style.display = 'none';
+      countryGrid.textContent = '';
+    }
+  }
+  viewmodeEl.addEventListener('change', applyViewMode);
 
   const mapEl = document.getElementById('map');
   const mapG = document.getElementById('mapg');
@@ -510,6 +625,20 @@ const dots = servers.map((s) => {
   mapEl.addEventListener('dblclick', () => {
     k = 1; tx = 0; ty = 0;
     applyTransform();
+  });
+
+  mapExpandBtn.addEventListener('click', () => {
+    const wrap = document.querySelector('.map-wrap');
+    const on = wrap.classList.toggle('expanded');
+    mapExpandBtn.textContent = on ? 'Collapse' : 'Expand';
+    mapExpandBtn.title = on ? 'Collapse map' : 'Expand map';
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.querySelector('.map-wrap.expanded')) {
+      document.querySelector('.map-wrap').classList.remove('expanded');
+      mapExpandBtn.textContent = 'Expand';
+      mapExpandBtn.title = 'Expand map';
+    }
   });
 
   function dotEl(ip) {
