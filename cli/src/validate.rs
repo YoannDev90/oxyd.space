@@ -10,7 +10,7 @@ pub struct ValidationResult {
 }
 
 fn find_validate_script() -> Result<String, String> {
-    // Try relative to the binary's location (dev mode: cli/target/debug/oxyd)
+    // 1. Relative to CARGO_MANIFEST_DIR (dev mode: cli/target/debug/oxyd)
     let mut path = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     path.pop(); // cli/
     path.pop(); // repo root
@@ -19,7 +19,16 @@ fn find_validate_script() -> Result<String, String> {
     if path.exists() {
         return Ok(path.to_string_lossy().to_string());
     }
-    Err("validate.py not found".into())
+
+    // 2. Relative to cwd (installed binary in same repo)
+    let mut path = PathBuf::from(".");
+    path.push("scripts");
+    path.push("validate.py");
+    if path.exists() {
+        return Ok(path.to_string_lossy().to_string());
+    }
+
+    Err("validate.py not found (install from oxyd.space repo or run from repo root)".into())
 }
 
 pub async fn validate(
@@ -70,7 +79,7 @@ pub async fn validate(
     }
 
     let output = Command::new("python3")
-        .args(&args[1..])
+        .args(&args)
         .output()
         .map_err(|e| format!("failed to run python3: {e}"))?;
 
