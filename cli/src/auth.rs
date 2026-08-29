@@ -7,6 +7,62 @@ use std::time::Duration;
 const DEVICE_CODE_URL: &str = "https://github.com/login/device/code";
 const TOKEN_URL: &str = "https://github.com/login/oauth/access_token";
 
+fn copy_to_clipboard(text: &str) -> bool {
+    let wayland = std::env::var("WAYLAND_DISPLAY").is_ok();
+    let macos = cfg!(target_os = "macos");
+    let windows = cfg!(target_os = "windows");
+
+    // Wayland → wl-copy is the only correct way
+    if wayland {
+        return run_cmd("wl-copy", &[text]);
+    }
+
+    // macOS → pbcopy
+    if macos {
+        return run_cmd("pbcopy", &[text]);
+    }
+
+    // Windows → clip
+    if windows {
+        return run_cmd("clip", &[]);
+    }
+
+    // X11 / fallback chain
+    run_cmd_arboard(text)
+        || run_cmd_stdin("xclip", &["-selection", "clipboard"], text)
+        || run_cmd_stdin("xsel", &["--clipboard", "--input"], text)
+}
+
+fn run_cmd(program: &str, args: &[&str]) -> bool {
+    Command::new(program)
+        .args(args)
+        .stdin(std::process::Stdio::null())
+        .spawn()
+        .and_then(|mut c| c.wait())
+        .map(|s| s.success())
+        .unwrap_or(false)
+}
+
+fn run_cmd_stdin(program: &str, args: &[&str], text: &str) -> bool {
+    use std::io::Write;
+    Command::new(program)
+        .args(args)
+        .stdin(std::process::Stdio::piped())
+        .spawn()
+        .and_then(|mut child| {
+            child.stdin.take().unwrap().write_all(text.as_bytes())?;
+            child.wait()
+        })
+        .map(|s| s.success())
+        .unwrap_or(false)
+}
+
+fn run_cmd_arboard(text: &str) -> bool {
+    arboard::Clipboard::new()
+        .and_then(|mut ctx| ctx.set_text(text).map(|_| true))
+        .unwrap_or(false)
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TokenData {
     pub access_token: String,
@@ -100,46 +156,9 @@ pub async fn device_flow_login(client_id: &str) -> Result<TokenData, String> {
         .arg(&resp.verification_uri)
         .spawn();
 
-    // Copy code to clipboard (try multiple methods)
+    // Copy code to clipboard
     let code = &resp.user_code;
-    let copied = Command::new("wl-copy")
-        .arg(code)
-        .spawn()
-        .and_then(|mut child| child.wait().map(|_| true))
-        .unwrap_or(false)
-        || arboard::Clipboard::new()
-            .and_then(|mut ctx| ctx.set_text(code.as_str()).map(|_| true))
-            .unwrap_or(false)
-        || Command::new("xclip")
-            .args(["-selection", "clipboard"])
-            .stdin(std::process::Stdio::piped())
-            .spawn()
-            .and_then(|mut child| {
-                use std::io::Write;
-                child.stdin.take().unwrap().write_all(code.as_bytes())?;
-                child.wait().map(|_| true)
-            })
-            .unwrap_or(false)
-        || Command::new("xsel")
-            .args(["--clipboard", "--input"])
-            .stdin(std::process::Stdio::piped())
-            .spawn()
-            .and_then(|mut child| {
-                use std::io::Write;
-                child.stdin.take().unwrap().write_all(code.as_bytes())?;
-                child.wait().map(|_| true)
-            })
-            .unwrap_or(false)
-        || Command::new("pbcopy")
-            .stdin(std::process::Stdio::piped())
-            .spawn()
-            .and_then(|mut child| {
-                use std::io::Write;
-                child.stdin.take().unwrap().write_all(code.as_bytes())?;
-                child.wait().map(|_| true)
-            })
-            .unwrap_or(false);
-
+    let copied = copy_to_clipboard(code);
     if copied {
         println!("Code copied to clipboard.\n");
     } else {
