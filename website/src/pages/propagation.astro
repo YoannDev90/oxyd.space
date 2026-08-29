@@ -7,6 +7,7 @@ import Layout from '../layouts/Layout.astro';
 
 const root = process.cwd();
 const dnsJson = JSON.parse(fs.readFileSync(nodePath.join(root, 'public/assets/dns.json'), 'utf8'));
+const servers = dnsJson.filter((s) => s.active !== false);
 const world = JSON.parse(
   fs.readFileSync(nodePath.join(root, 'public/assets/countries-110m.json'), 'utf8'),
 );
@@ -19,7 +20,7 @@ const path = d3.geoPath(proj);
 const landPath = path(topojson.feature(world, world.objects.land));
 const borderPath = path(topojson.mesh(world, world.objects.countries, (a, b) => a !== b));
 
-const dots = dnsJson.map((s) => {
+const dots = servers.map((s) => {
   const p = proj([s.lng, s.lat]);
   return { ...s, x: Math.round(p[0] * 10) / 10, y: Math.round(p[1] * 10) / 10 };
 });
@@ -348,7 +349,7 @@ const dots = dnsJson.map((s) => {
     <div class="tool">
       <h1>DNS Propagation Checker</h1>
       <p class="sub">
-        Query <b>{dnsJson.length}</b> global DNS servers simultaneously. Free, no auth, instant
+        Query <b>{servers.length}</b> global DNS servers simultaneously. Free, no auth, instant
         results.
       </p>
 
@@ -417,7 +418,7 @@ const dots = dnsJson.map((s) => {
         </div>
         <div id="resultsGrid" class="results-grid">
           {
-            dnsJson.map((s) => (
+            servers.map((s) => (
               <div class="srv" data-ip={s.ip}>
                 <span class="dot pending"></span>
                 <div class="info">
