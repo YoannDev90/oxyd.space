@@ -100,11 +100,46 @@ pub async fn device_flow_login(client_id: &str) -> Result<TokenData, String> {
         .arg(&resp.verification_uri)
         .spawn();
 
-    // Copy code to clipboard (cross-platform)
-    if let Ok(mut ctx) = arboard::Clipboard::new() {
-        let _ = ctx.set_text(&resp.user_code);
+    // Copy code to clipboard (try multiple methods)
+    let code = &resp.user_code;
+    let copied = arboard::Clipboard::new()
+        .and_then(|mut ctx| ctx.set_text(code.as_str()).map(|_| true))
+        .unwrap_or(false)
+        || Command::new("xclip")
+            .args(["-selection", "clipboard"])
+            .stdin(std::process::Stdio::piped())
+            .spawn()
+            .and_then(|mut child| {
+                use std::io::Write;
+                child.stdin.take().unwrap().write_all(code.as_bytes())?;
+                child.wait().map(|_| true)
+            })
+            .unwrap_or(false)
+        || Command::new("xsel")
+            .args(["--clipboard", "--input"])
+            .stdin(std::process::Stdio::piped())
+            .spawn()
+            .and_then(|mut child| {
+                use std::io::Write;
+                child.stdin.take().unwrap().write_all(code.as_bytes())?;
+                child.wait().map(|_| true)
+            })
+            .unwrap_or(false)
+        || Command::new("pbcopy")
+            .stdin(std::process::Stdio::piped())
+            .spawn()
+            .and_then(|mut child| {
+                use std::io::Write;
+                child.stdin.take().unwrap().write_all(code.as_bytes())?;
+                child.wait().map(|_| true)
+            })
+            .unwrap_or(false);
+
+    if copied {
+        println!("Code copied to clipboard.\n");
+    } else {
+        println!("Copy the code above manually.\n");
     }
-    println!("Code copied to clipboard.\n");
 
     // Step 2: Poll for token
     let interval = Duration::from_secs(resp.interval.max(5));
