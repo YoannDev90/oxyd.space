@@ -4,7 +4,7 @@
 
 If you discover a security vulnerability, **do NOT open a public issue**. Instead:
 
-1. Email **security@oxyd.space** (or open a [private security advisory](https://github.com/YoannDev90/oxyd.space/security/advisories/new))
+1. Open a [private security advisory on GitHub](https://github.com/YoannDev90/oxyd.space/security/advisories/new)
 2. Include:
    - Description of the vulnerability
    - Steps to reproduce
