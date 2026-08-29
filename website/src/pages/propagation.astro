@@ -148,6 +148,16 @@ const dots = servers.map((s) => {
       gap: 10px;
       flex-wrap: wrap;
     }
+    .form .input-wrap {
+      flex: 1 1 160px;
+    }
+    .form select {
+      flex: 0 0 auto;
+    }
+    .form .btn-big {
+      padding: 0 24px;
+      border-radius: 10px;
+    }
     .input-wrap {
       flex: 1;
       min-width: 200px;
@@ -207,16 +217,6 @@ const dots = servers.map((s) => {
       font-family: var(--mono);
       font-size: 13px;
       color: var(--muted);
-    }
-    .results-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .results-actions select {
-      padding: 8px 10px;
-      font-size: 12px;
-      border-radius: 8px;
     }
     .country-group {
       margin-bottom: 14px;
@@ -469,21 +469,19 @@ const dots = servers.map((s) => {
           <option value="NS">NS</option>
           <option value="TXT">TXT</option>
         </select>
-        <button class="btn-big" id="go" style="padding: 0 24px; border-radius: 10px;">Check</button>
+        <select id="viewmode">
+          <option value="default">default</option>
+          <option value="country">by country</option>
+        </select>
+        <button class="btn-big" id="go">Check</button>
       </div>
 
       <div id="resultsArea">
         <div class="results-header" style="display: none;">
           <h2>Results</h2>
-          <span class="results-actions">
-            <select id="viewmode">
-              <option value="default">default</option>
-              <option value="country">by country</option>
-            </select>
-            <span class="count"
-              ><b id="doneCount">0</b>/<b id="totalCount">0</b></span
-            >
-          </span>
+          <span class="count"
+            ><b id="doneCount">0</b>/<b id="totalCount">0</b></span
+          >
         </div>
         <div class="summary-bar" style="display: none;">
           <span class="count"
