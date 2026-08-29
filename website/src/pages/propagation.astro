@@ -337,7 +337,7 @@ const dots = servers.map((s) => {
       border: 1px solid var(--line);
       border-radius: 10px;
       padding: 12px 16px;
-      margin-bottom: 12px;
+      margin-bottom: 20px;
       font-family: var(--mono);
       font-size: 13px;
       flex-wrap: wrap;
@@ -509,7 +509,7 @@ const dots = servers.map((s) => {
             ))
           }
         </div>
-        <div id="countryGrid" class="results-grid" style="display: none;"></div>
+        <div id="countryGrid" style="display: none;"></div>
       </div>
     </div>
   </main>
@@ -575,7 +575,7 @@ const dots = servers.map((s) => {
         countryGrid.appendChild(g);
       }
       grid.style.display = 'none';
-      countryGrid.style.display = 'grid';
+      countryGrid.style.display = 'block';
     } else {
       for (const r of flatOrder) grid.appendChild(r);
       grid.style.display = 'grid';
