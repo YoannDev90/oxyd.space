@@ -23,11 +23,17 @@ jobs:
       - name: Probe global DNS servers
         run: python scripts/healthcheck_dns.py
 
-      - name: Commit server health changes
+      - name: Commit health changes and redeploy
         run: |
-          git diff --quiet website/public/assets/dns.json && exit 0
+          if git diff --quiet website/public/assets/dns.json; then
+            echo "no health changes"
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add website/public/assets/dns.json
           git commit -m "dns: refresh server health flags"
           git push origin main
+          gh workflow run deploy.yml
+        env:
+          GH_TOKEN: ${{ github.token }}
